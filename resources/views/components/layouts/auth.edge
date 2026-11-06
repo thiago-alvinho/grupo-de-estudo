@@ -1,0 +1,166 @@
+@let(mode = $props.get('mode', 'login'))
+@let(pageTitle =
+  mode === 'signup' ? 'Criar conta — Grupo de Estudo' : 'Entrar — Grupo de Estudo')
+<!DOCTYPE html>
+<html
+  lang="pt-BR"
+  data-theme="{{
+    request.plainCookie('app_theme', {
+      defaultValue: 'light',
+      encoded: false,
+    })
+  }}"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ pageTitle }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('dumper')
+  </head>
+  <body>
+    {{-- Top Utilities Bar --}}
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="topbar__left">
+          @!logo()
+          <div class="topbar__breadcrumb"><span>Autenticação Acadêmica</span></div>
+        </div>
+        <div class="topbar__right">
+          @!themeToggle()
+        </div>
+      </div>
+    </header>
+    {{-- Split-Screen Container --}}
+    <main class="auth-shell">
+      {{-- Left Column: Authentication Form --}}
+      <section class="auth-col-form">
+        <div class="auth-box">{{{ await $slots.main() }}}</div>
+      </section>
+      {{-- Right Column: Platform Showcase & Study Track Preview Card --}}
+      <section class="auth-col-showcase">
+        <div class="auth-glow-top"></div>
+        <div class="auth-glow-bottom"></div>
+
+        <div style="position: relative; z-index: 1; max-width: 460px;">
+          <span class="badge badge--primary" style="margin-bottom: 14px;">
+            @svg('lucide:graduation-cap', { width: 14, height: 14 })
+            <span>Comunidade Acadêmica Colaborativa</span>
+          </span>
+          <h2 class="auth-heading">Construa o hábito de estudar com constância</h2>
+          <p class="auth-subheading">
+            Organize videoaulas do YouTube em trilhas estruturadas, acompanhe cada aula concluída e estude no seu ritmo.
+          </p>
+        </div>
+
+        <div>
+          <div class="auth-showcase-card">
+            <div class="track-card__badges" style="margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge--primary">Trilha em Destaque</span>
+                <span class="badge">Privada</span>
+              </div>
+              <span
+                class="mono"
+                style="font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px;"
+              >
+                @svg('lucide:play-circle', {
+                  width: 15,
+                  height: 15,
+                  style: 'color: var(--primary);',
+                })
+                
+                12 videoaulas
+
+              </span>
+            </div>
+
+            <h3 class="display-font" style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">
+              Cálculo I — Limites, Derivadas e Aplicações
+            </h3>
+            <p style="font-size: 13px; color: var(--muted); margin-bottom: 18px;">
+              Playlist curada com os melhores conteúdos didáticos sobre fundamentos do cálculo diferencial para engenharia e exatas.
+            </p>
+
+            <div class="progress">
+              <div class="progress__meta">
+                <span>9 de 12 concluídas</span>
+                <span class="progress__pct progress__pct--ok">75% concluído</span>
+              </div>
+              <div class="progress__bar">
+                <div class="progress__fill" style="width: 75%;"></div>
+              </div>
+            </div>
+
+            <div class="auth-showcase-next">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span
+                  style="width: 28px; height: 28px; border-radius: 999px; background: var(--ok-bg); color: var(--ok); display: inline-grid; place-items: center;"
+                >
+                  @svg('lucide:play', { width: 13, height: 13 })
+                </span>
+                <div>
+                  <span
+                    class="mono"
+                    style="display: block; font-size: 10.5px; color: var(--muted); text-transform: uppercase;"
+                  >
+                    Próxima aula
+                  </span>
+                  <span style="font-size: 13px; font-weight: 600; color: var(--ink);">
+                    Aula 10: Regra da Cadeia
+                  </span>
+                </div>
+              </div>
+              <span class="mono" style="font-size: 12px; color: var(--muted);">18:40</span>
+            </div>
+          </div>
+
+          <div class="auth-kpi-row">
+            <div class="auth-kpi-pill">
+              <span style="font-size: 16px;">🔥</span>
+              <span class="mono" style="font-size: 13px; font-weight: 700;">14 dias</span>
+              <span style="font-size: 11px; color: var(--muted);">constância</span>
+            </div>
+            <div class="auth-kpi-pill">
+              <span style="font-size: 16px;">⚡</span>
+              <span class="mono" style="font-size: 13px; font-weight: 700;">84%</span>
+              <span style="font-size: 11px; color: var(--muted);">retenção média</span>
+            </div>
+            <div class="auth-kpi-pill">
+              <span style="font-size: 16px;">👥</span>
+              <span class="mono" style="font-size: 13px; font-weight: 700;">+2.400</span>
+              <span style="font-size: 11px; color: var(--muted);">estudantes</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="auth-quote-box">
+          @svg('lucide:quote', {
+            width: 20,
+            height: 20,
+            style: 'color: var(--primary); flex: none; margin-top: 2px;',
+          })
+          <div>
+            <p style="font-size: 13px; color: var(--ink-2); font-style: italic;">
+              "A constância supera a intensidade. Uma aula por dia transforma o seu aprendizado."
+            </p>
+            <span
+              class="mono"
+              style="display: block; font-size: 10.5px; color: var(--muted); margin-top: 4px; text-transform: uppercase;"
+            >
+              Metodologia Grupo de Estudo
+            </span>
+          </div>
+        </div>
+      </section>
+    </main>
+    @!footer()
+    @include('partials/flash_alerts')
+  </body>
+</html>

@@ -1,0 +1,11 @@
+@let(routeTarget = auth?.user ? 'tracks.index' : 'home')
+@link({
+  route: routeTarget,
+  class: 'brand-logo',
+  'aria-label': 'Grupo de Estudo',
+})
+  <span class="brand-logo__mark">
+    @svg('lucide:book-open', { width: 18, height: 18 })
+  </span>
+  <span class="brand-logo__text">Grupo de Estudo</span>
+@end

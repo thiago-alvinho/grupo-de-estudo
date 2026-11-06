@@ -1,0 +1,44 @@
+@let(pageTitle = $props.get('title'))
+@let(breadcrumb = $props.get('breadcrumb'))
+<!DOCTYPE html>
+<html
+  lang="pt-BR"
+  data-theme="{{
+    request.plainCookie('app_theme', {
+      defaultValue: 'light',
+      encoded: false,
+    })
+  }}"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ pageTitle ? `${pageTitle} — Grupo de Estudo` : 'Grupo de Estudo' }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('dumper')
+  </head>
+  <body>
+    @!navbar({ breadcrumb })
+
+    <main class="app-main">{{{ await $slots.main() }}}</main>
+
+    <nav class="mobile-nav" aria-label="Navegação mobile">
+      @navLink({ route: 'tracks.index', exact: true, class: 'mobile-nav__item' })
+        @svg('lucide:compass', { width: 18, height: 18 })
+        <span>Trilhas</span>
+      @end
+      @navLink({ route: 'tracks.create', exact: true, class: 'mobile-nav__item' })
+        @svg('lucide:plus-circle', { width: 18, height: 18 })
+        <span>Nova Trilha</span>
+      @end
+    </nav>
+    @!footer()
+    @include('partials/flash_alerts')
+  </body>
+</html>

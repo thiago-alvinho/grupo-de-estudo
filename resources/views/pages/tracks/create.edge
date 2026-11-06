@@ -1,0 +1,256 @@
+@layouts.app({
+  title: 'Criar Nova Trilha de Estudo',
+  breadcrumb: 'Nova Trilha de Estudo',
+})
+  <div
+    x-data="{
+      previewTitle: {{ JSON.stringify(old('title') || '') }},
+      previewDesc: {{ JSON.stringify(old('description') || '') }},
+      submitting: false
+      }"
+    style="display: flex; flex-direction: column; gap: 26px;"
+  >
+    {{-- Top Action Bar & Header Title --}}
+    <div class="workspace-header">
+      @link({ route: 'tracks.index', class: 'back-link' })
+        @svg('lucide:arrow-left', { width: 15, height: 15 })
+        <span>Voltar para Minhas Trilhas</span>
+      @end
+
+      <div class="workspace-header__row">
+        <div>
+          <div class="workspace-header__title-wrap">
+            <h1 class="workspace-header__title">Criar Nova Trilha de Estudo</h1>
+            <span class="badge badge--primary">Modo de Criação</span>
+          </div>
+          <p class="workspace-header__desc">
+            Organize videoaulas do YouTube em uma jornada estruturada de aprendizado com metas, acompanhamento de progresso e anotações.
+          </p>
+        </div>
+      </div>
+    </div>
+    {{-- 2-Column Asymmetric Workspace Split --}}
+    <div class="workspace-split">
+      {{-- Left Column: Main Form --}}
+      <div>
+        @form({
+          route: 'tracks.store',
+          method: 'POST',
+          'x-on:submit': 'submitting = true',
+          style: 'display: flex; flex-direction: column; gap: 20px;',
+        })
+          <section class="surface-card">
+            <div class="surface-card__head">
+              <div class="surface-card__head-icon">
+                @svg('lucide:file-edit', { width: 16, height: 16 })
+              </div>
+              <h2 class="surface-card__title">1. Informações Básicas da Trilha</h2>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              @field.root({ name: 'title' })
+                <div class="field__label-row">
+                  @!field.label({ text: 'Título da Trilha *' })
+                  <span class="field__counter" x-text="`${previewTitle.length} / 150 caracteres`">
+                    0 / 150 caracteres
+                  </span>
+                </div>
+                @!input.control({
+                  placeholder: 'Ex: Cálculo I — Limites, Derivadas e Aplicações',
+                  'x-model': 'previewTitle',
+                  maxlength: 150,
+                  required: true,
+                })
+                @!field.error()
+              @end
+              @field.root({ name: 'description' })
+                <div class="field__label-row">
+                  @!field.label({ text: 'Descrição e Objetivos Pedagógicos (opcional)' })
+                  <span style="font-size: 12px; color: var(--muted);">Resumo da trilha</span>
+                </div>
+                @!textarea.control({
+                  placeholder:
+                    'Descreva o que será estudado nesta trilha, tópicos principais ou observações para suas revisões...',
+                  'x-model': 'previewDesc',
+                  rows: 4,
+                })
+                @!field.error()
+              @end
+
+              <div>
+                <span class="field__label" style="display: block; margin-bottom: 8px;">
+                  Visibilidade da Trilha
+                </span>
+                <div class="visibility-grid">
+                  <div class="visibility-card visibility-card--active">
+                    <span style="color: var(--primary); margin-top: 2px;">
+                      @svg('lucide:lock', { width: 18, height: 18 })
+                    </span>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 13.5px; font-weight: 600;">Trilha Privada</span>
+                        <span
+                          class="badge badge--primary"
+                          style="font-size: 10px; padding: 2px 7px;"
+                        >
+                          Padrão
+                        </span>
+                      </div>
+                      <p style="font-size: 12.5px; color: var(--muted); margin-top: 4px;">
+                        Apenas você tem acesso às videoaulas cadastradas, anotações e progresso desta trilha.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="visibility-card" style="opacity: 0.65; cursor: default;">
+                    <span style="color: var(--muted); margin-top: 2px;">
+                      @svg('lucide:globe', { width: 18, height: 18 })
+                    </span>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 13.5px; font-weight: 600;">Disciplina Pública</span>
+                        <span class="badge" style="font-size: 10px; padding: 2px 7px;">
+                          Professor / Admin
+                        </span>
+                      </div>
+                      <p style="font-size: 12.5px; color: var(--muted); margin-top: 4px;">
+                        Disciplinas oficiais criadas por contas administradoras para toda a comunidade.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          {{-- Footer Action Bar --}}
+          <div
+            class="surface-card"
+            style="padding: 16px 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;"
+          >
+            @link({ route: 'tracks.index', class: 'btn btn--ghost' })
+              Cancelar
+            @end
+
+            <button type="submit" class="btn btn--primary" x-bind:disabled="submitting">
+              <span x-text="submitting ? 'Criando trilha…' : 'Criar Trilha e Adicionar Videoaulas'">
+                Criar Trilha e Adicionar Videoaulas
+              </span>
+              @svg('lucide:arrow-right', { width: 16, height: 16 })
+            </button>
+          </div>
+        @end
+      </div>
+      {{-- Right Column: Live Preview & Pedagogical Tips --}}
+      <aside style="display: flex; flex-direction: column; gap: 20px; position: sticky; top: 88px;">
+        <div class="surface-card" style="padding: 20px 22px;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"
+          >
+            <span
+              style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2);"
+            >
+              @svg('lucide:eye', {
+                width: 15,
+                height: 15,
+                style: 'color: var(--primary);',
+              })
+              
+              Preview em Tempo Real
+
+            </span>
+            <span class="mono" style="font-size: 11px; color: var(--muted);">No Dashboard</span>
+          </div>
+
+          <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 14px;">
+            Assim é como o cartão da sua trilha será exibido no seu painel de estudos:
+          </p>
+
+          <div class="track-card" style="padding: 18px;">
+            <div class="track-card__accent"></div>
+            <div>
+              <div class="track-card__badges">
+                <span class="badge">
+                  @svg('lucide:lock', { width: 11, height: 11 })
+                  <span>Privada</span>
+                </span>
+                <span class="badge badge--primary">
+                  @svg('lucide:play-circle', { width: 11, height: 11 })
+                  <span>0 videoaulas</span>
+                </span>
+              </div>
+
+              <h4
+                class="track-card__title"
+                style="font-size: 16.5px; margin-top: 12px;"
+                x-text="previewTitle.trim() ? previewTitle : 'Título da sua trilha acadêmica'"
+              >
+                Título da sua trilha acadêmica
+              </h4>
+
+              <p
+                class="track-card__desc"
+                style="font-size: 13px;"
+                x-text="previewDesc.trim() ? previewDesc : 'A descrição que você digitar aparecerá resumida aqui no cartão da trilha.'"
+              >
+                A descrição que você digitar aparecerá resumida aqui no cartão da trilha.
+              </p>
+
+              <div class="progress" style="margin-top: 16px;">
+                <div class="progress__meta">
+                  <span>Progresso do Estudante</span>
+                  <span class="progress__pct progress__pct--ok">0% (Início)</span>
+                </div>
+                <div class="progress__bar">
+                  <div class="progress__fill" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="surface-card" style="padding: 20px 22px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+            @svg('lucide:lightbulb', {
+              width: 18,
+              height: 18,
+              style: 'color: var(--warning);',
+            })
+            <h3 class="display-font" style="font-size: 15px; font-weight: 600;">
+              Boas Práticas de Aprendizado
+            </h3>
+          </div>
+
+          <ul class="tips-list">
+            <li class="tips-list__item">
+              <span class="tips-list__icon">
+                @svg('lucide:check-circle-2', { width: 16, height: 16 })
+              </span>
+              <span>
+                <strong>Duração ideal:</strong>
+                Priorize aulas entre 10 e 25 minutos para maximizar o foco e facilitar a revisão.
+              </span>
+            </li>
+            <li class="tips-list__item">
+              <span class="tips-list__icon">
+                @svg('lucide:check-circle-2', { width: 16, height: 16 })
+              </span>
+              <span>
+                <strong>Objetivos claros:</strong>
+                Anote na descrição os principais tópicos que pretende dominar ao concluir a trilha.
+              </span>
+            </li>
+            <li class="tips-list__item">
+              <span class="tips-list__icon">
+                @svg('lucide:check-circle-2', { width: 16, height: 16 })
+              </span>
+              <span>
+                <strong>Sequenciamento:</strong>
+                Logo após criar a trilha, você poderá adicionar quantos links do YouTube quiser na sala de estudo.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+@end

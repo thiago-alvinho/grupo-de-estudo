@@ -1,0 +1,126 @@
+@let(track = $props.get('track'))
+@let(isComplete = track.totalLessons > 0 && track.progressPercent === 100)
+
+<article
+  class="track-card"
+  data-title="{{ track.title.toLowerCase() }}"
+  data-desc="{{ (track.description || '').toLowerCase() }}"
+  data-status="{{
+    isComplete
+      ? 'completed'
+      : track.completedLessons > 0
+        ? 'in_progress'
+        : 'not_started'
+  }}"
+  data-visibility="{{ track.isPublic ? 'public' : 'private' }}"
+  x-show="matchesTrack($el.dataset)"
+>
+  <div class="track-card__accent {{ isComplete ? 'track-card__accent--ok' : '' }}"></div>
+
+  <div>
+    <div class="track-card__badges">
+      <span class="badge">
+        @if(track.isPublic)
+          @svg('lucide:globe', { width: 12, height: 12 })
+          <span>Pública</span>
+        @else
+          @svg('lucide:lock', { width: 12, height: 12 })
+          <span>Privada</span>
+        @end
+      </span>
+      <span class="badge {{ isComplete ? 'badge--ok' : 'badge--primary' }}">
+        @if(isComplete)
+          @svg('lucide:check-circle-2', { width: 12, height: 12 })
+        @else
+          @svg('lucide:play-circle', { width: 12, height: 12 })
+        @end
+
+        <span>
+          {{ track.totalLessons }}
+          {{ track.totalLessons === 1 ? 'videoaula' : 'videoaulas' }}
+        </span>
+      </span>
+    </div>
+    @link({
+      route: 'tracks.show',
+      routeParams: { id: track.id },
+      class: 'track-card__title',
+    })
+      {{ track.title }}
+    @end
+    @if(track.description)
+      <p class="track-card__desc">{{ track.description }}</p>
+    @else
+      <p class="track-card__desc" style="color: var(--subtle);">
+        Trilha organizada com videoaulas do YouTube e acompanhamento de progresso individual.
+      </p>
+    @end
+
+    <div class="progress" style="margin-top: 20px;">
+      <div class="progress__meta {{ isComplete ? 'progress__meta--ok' : '' }}">
+        @if(isComplete)
+          <span style="display: inline-flex; align-items: center; gap: 5px;">
+            @svg('lucide:check-check', { width: 15, height: 15 })
+            
+            100% Concluída (
+            {{ track.completedLessons }}
+             de
+            {{ track.totalLessons }}
+             aulas)
+
+          </span>
+        @else
+          <span>{{ track.completedLessons }} de {{ track.totalLessons }} aulas concluídas</span>
+        @end
+
+        <span class="progress__pct {{ isComplete ? 'progress__pct--ok' : '' }}">
+          {{ track.progressPercent }}%
+        </span>
+      </div>
+
+      <div class="progress__bar">
+        <div class="progress__fill" style="width: {{ track.progressPercent }}%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="track-card__footer">
+    @link({
+      route: 'tracks.show',
+      routeParams: { id: track.id },
+      class: isComplete ? 'btn btn--secondary btn--sm' : 'btn btn--primary btn--sm',
+    })
+      @if(isComplete)
+        @svg('lucide:rotate-ccw', { width: 15, height: 15, style: 'color: var(--ok);' })
+        <span>Revisar Conteúdo</span>
+      @elseif(track.completedLessons > 0)
+        @svg('lucide:play', { width: 15, height: 15 })
+        <span>Continuar Estudando</span>
+      @else
+        @svg('lucide:play', { width: 15, height: 15 })
+        <span>Iniciar Trilha</span>
+      @end
+    @end
+
+    <div class="track-card__actions">
+      @link({
+        route: 'tracks.edit',
+        routeParams: { id: track.id },
+        class: 'iconbtn',
+        title: 'Editar trilha',
+      })
+        @svg('lucide:pencil', { width: 15, height: 15 })
+      @end
+      @form({
+        route: 'tracks.destroy',
+        routeParams: { id: track.id },
+        onsubmit:
+          "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
+      })
+        <button type="submit" class="iconbtn" style="color: var(--danger);" title="Excluir trilha">
+          @svg('lucide:trash-2', { width: 15, height: 15 })
+        </button>
+      @end
+    </div>
+  </div>
+</article>

@@ -1,0 +1,56 @@
+@let(breadcrumb = $props.get('breadcrumb'))
+@let(nav = [
+  { label: 'Minhas Trilhas', route: 'tracks.index', icon: 'lucide:compass', exact: true },
+  { label: 'Nova Trilha', route: 'tracks.create', icon: 'lucide:plus-circle', exact: true },
+])
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="topbar__left">
+      @!logo()
+      @if(breadcrumb)
+        <div class="topbar__breadcrumb">
+          @link({ route: 'tracks.index', class: 'topbar__breadcrumb-link' })
+            Minhas Trilhas
+          @end
+          @svg('lucide:chevron-right', { width: 14, height: 14 })
+          <span class="topbar__breadcrumb-current">{{ breadcrumb }}</span>
+        </div>
+      @end
+    </div>
+
+    <nav class="topbar__nav" aria-label="Navegação principal">
+      @each(item in nav)
+        @navLink({ route: item.route, exact: item.exact, class: 'topbar__nav-link' })
+          @if(item.icon)
+            @svg(item.icon, { width: 16, height: 16 })
+          @end
+
+          <span>{{ item.label }}</span>
+        @end
+      @end
+    </nav>
+
+    <div class="topbar__right">
+      @link({ route: 'tracks.create', class: 'btn btn--primary btn--sm' })
+        @svg('lucide:plus', { width: 15, height: 15 })
+        <span>Nova Trilha</span>
+      @end
+      @!themeToggle()
+      @if(auth?.user)
+        <div class="user-pill">
+          <span class="user-pill__avatar" title="{{ auth.user.email }}">
+            {{ auth.user.initials }}
+          </span>
+          <span class="user-pill__name">{{ auth.user.fullName || auth.user.email }}</span>
+          @form({ route: 'session.destroy', method: 'POST' })
+            <button type="submit" class="btn btn--secondary btn--sm" title="Sair da conta">
+              @svg('lucide:log-out', { width: 14, height: 14 })
+              <span>Sair</span>
+            </button>
+          @end
+        </div>
+      @end
+    </div>
+  </div>
+</header>

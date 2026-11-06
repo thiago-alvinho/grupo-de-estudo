@@ -1,0 +1,50 @@
+@layouts.marketing()
+  <main
+    class="app-main"
+    style="justify-content: center; align-items: center; text-align: center; padding: 64px 24px;"
+  >
+    <div
+      style="max-width: 680px; display: flex; flex-direction: column; align-items: center; gap: 20px;"
+    >
+      <span class="badge badge--primary">
+        @svg('lucide:sparkles', { width: 14, height: 14 })
+        <span>Plataforma Colaborativa de Estudos</span>
+      </span>
+
+      <h1
+        class="display-font"
+        style="font-size: clamp(32px, 5vw, 48px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15;"
+      >
+        Transforme vídeos do YouTube em trilhas de estudo organizadas
+      </h1>
+
+      <p style="font-size: 16.5px; color: var(--muted); max-width: 560px; line-height: 1.6;">
+        Monte suas playlists de estudo, acompanhe seu progresso aula a aula, faça anotações e prepare-se para estudar em salas sincronizadas com seus amigos.
+      </p>
+
+      <div
+        style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px;"
+      >
+        @if(auth?.user)
+          @link({ route: 'tracks.index', class: 'btn btn--primary' })
+            @svg('lucide:compass', { width: 17, height: 17 })
+            <span>Acessar Minhas Trilhas</span>
+          @end
+          @link({ route: 'tracks.create', class: 'btn btn--secondary' })
+            @svg('lucide:plus', { width: 17, height: 17 })
+            <span>Criar Nova Trilha</span>
+          @end
+        @else
+          @link({ route: 'new_account.create', class: 'btn btn--primary' })
+            <span>Começar gratuitamente</span>
+            @svg('lucide:arrow-right', { width: 17, height: 17 })
+          @end
+          @link({ route: 'session.create', class: 'btn btn--secondary' })
+            @svg('lucide:log-in', { width: 17, height: 17 })
+            <span>Já tenho uma conta</span>
+          @end
+        @end
+      </div>
+    </div>
+  </main>
+@end

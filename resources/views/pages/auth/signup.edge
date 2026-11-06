@@ -1,0 +1,137 @@
+@layouts.auth({ mode: 'signup' })
+  <div>
+    <div class="auth-badge">
+      <span class="auth-badge__dot"></span>
+      <span>Cadastro Acadêmico</span>
+    </div>
+    <h1 class="auth-heading">Crie sua conta no Grupo de Estudo</h1>
+    <p class="auth-subheading">
+      Junte-se à comunidade de estudantes e organize suas videoaulas do YouTube em trilhas.
+    </p>
+  </div>
+  {{-- Mode Toggle Tabs (Entrar / Criar conta) --}}
+  <div class="auth-tabs" role="tablist">
+    @link({ route: 'session.create', class: 'auth-tab' })
+      @svg('lucide:log-in', { width: 15, height: 15 })
+      <span>Entrar</span>
+    @end
+    @link({ route: 'new_account.create', class: 'auth-tab auth-tab--active' })
+      @svg('lucide:user-plus', { width: 15, height: 15 })
+      <span>Criar conta</span>
+    @end
+  </div>
+  @form({
+    route: 'new_account.store',
+    method: 'POST',
+    class: 'auth-form',
+    'x-data': '{ submitting: false, showPassword: false }',
+    'x-on:submit': 'submitting = true',
+  })
+    @field.root({ name: 'fullName' })
+      @!field.label({ text: 'Nome completo' })
+      <div class="field__input-wrap">
+        <span class="field__icon-left">
+          @svg('lucide:user', { width: 17, height: 17 })
+        </span>
+        @!input.control({
+          autocomplete: 'name',
+          placeholder: 'Ex: Ana Luísa',
+          class: 'field__input--with-left-icon',
+        })
+      </div>
+      @!field.error()
+    @end
+    @field.root({ name: 'email' })
+      @!field.label({ text: 'E-mail acadêmico ou pessoal' })
+      <div class="field__input-wrap">
+        <span class="field__icon-left">
+          @svg('lucide:mail', { width: 17, height: 17 })
+        </span>
+        @!input.control({
+          type: 'email',
+          autocomplete: 'email',
+          placeholder: 'seu.email@exemplo.com',
+          class: 'field__input--with-left-icon',
+          required: true,
+        })
+      </div>
+      @!field.error()
+    @end
+    @field.root({ name: 'password' })
+      @!field.label({ text: 'Senha' })
+      <div class="field__input-wrap">
+        <span class="field__icon-left">
+          @svg('lucide:lock', { width: 17, height: 17 })
+        </span>
+        @!input.control({
+          type: 'password',
+          autocomplete: 'new-password',
+          placeholder: 'Mínimo de 8 caracteres',
+          class: 'field__input--with-left-icon field__input--with-right-icon',
+          'x-bind:type': "showPassword ? 'text' : 'password'",
+          required: true,
+        })
+        <button
+          type="button"
+          class="field__icon-right"
+          aria-label="Alternar visibilidade da senha"
+          x-on:click="showPassword = !showPassword"
+        >
+          <span x-show="!showPassword">
+            @svg('lucide:eye', { width: 17, height: 17 })
+          </span>
+          <span x-show="showPassword" x-cloak>
+            @svg('lucide:eye-off', { width: 17, height: 17 })
+          </span>
+        </button>
+      </div>
+      @!field.error()
+    @end
+    @field.root({ name: 'passwordConfirmation' })
+      @!field.label({ text: 'Confirmar senha' })
+      <div class="field__input-wrap">
+        <span class="field__icon-left">
+          @svg('lucide:shield-check', { width: 17, height: 17 })
+        </span>
+        @!input.control({
+          type: 'password',
+          autocomplete: 'new-password',
+          placeholder: 'Repita a senha escolhida',
+          class: 'field__input--with-left-icon',
+          'x-bind:type': "showPassword ? 'text' : 'password'",
+          required: true,
+        })
+      </div>
+      @!field.error()
+    @end
+
+    <button
+      type="submit"
+      class="btn btn--primary btn--block"
+      style="margin-top: 6px;"
+      x-bind:disabled="submitting"
+    >
+      <span x-text="submitting ? 'Criando conta…' : 'Criar minha conta gratuita'">
+        Criar minha conta gratuita
+      </span>
+      @svg('lucide:arrow-right', { width: 16, height: 16 })
+    </button>
+  @end
+
+  <p class="auth-switch">
+    
+    Já tem uma conta?
+
+    @link({ route: 'session.create', class: 'il' })
+      Entrar na plataforma
+    @end
+  </p>
+
+  <p class="auth-terms">
+    Ao continuar, você concorda com os
+    <a href="#termos" class="il">Termos de Uso</a>
+    e a
+    <a href="#privacidade" class="il">Política de Privacidade</a>
+    do Grupo de Estudo.
+  </p>
+@end

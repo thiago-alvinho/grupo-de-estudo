@@ -1,0 +1,162 @@
+@layouts.app({
+  title: `Editar: ${track.title}`,
+  breadcrumb: `Editar: ${track.title}`,
+})
+  <div
+    x-data="{
+      previewTitle: {{ JSON.stringify(old('title') || track.title) }},
+      previewDesc: {{ JSON.stringify(old('description') || track.description || '') }},
+      submitting: false
+      }"
+    style="display: flex; flex-direction: column; gap: 26px;"
+  >
+    {{-- Top Action Bar & Header Title --}}
+    <div class="workspace-header">
+      @link({
+        route: 'tracks.show',
+        routeParams: { id: track.id },
+        class: 'back-link',
+      })
+        @svg('lucide:arrow-left', { width: 15, height: 15 })
+        <span>Voltar para a Trilha</span>
+      @end
+
+      <div class="workspace-header__row">
+        <div>
+          <div class="workspace-header__title-wrap">
+            <h1 class="workspace-header__title">Editar Trilha de Estudo</h1>
+            <span class="badge badge--primary">Modo de Edição</span>
+          </div>
+          <p class="workspace-header__desc">
+            Atualize o título e a descrição pedagógica da sua trilha de estudos.
+          </p>
+        </div>
+      </div>
+    </div>
+    {{-- 2-Column Asymmetric Workspace Split --}}
+    <div class="workspace-split">
+      <div>
+        @form({
+          route: 'tracks.update',
+          routeParams: { id: track.id },
+          'x-on:submit': 'submitting = true',
+          style: 'display: flex; flex-direction: column; gap: 20px;',
+        })
+          <section class="surface-card">
+            <div class="surface-card__head">
+              <div class="surface-card__head-icon">
+                @svg('lucide:pencil', { width: 16, height: 16 })
+              </div>
+              <h2 class="surface-card__title">Informações da Trilha</h2>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              @field.root({ name: 'title' })
+                <div class="field__label-row">
+                  @!field.label({ text: 'Título da Trilha *' })
+                  <span
+                    class="field__counter"
+                    x-text="`${previewTitle.length} / 150 caracteres`"
+                  ></span>
+                </div>
+                @!input.control({
+                  value: track.title,
+                  placeholder: 'Ex: Cálculo I — Limites, Derivadas e Aplicações',
+                  'x-model': 'previewTitle',
+                  maxlength: 150,
+                  required: true,
+                })
+                @!field.error()
+              @end
+              @field.root({ name: 'description' })
+                <div class="field__label-row">
+                  @!field.label({ text: 'Descrição e Objetivos Pedagógicos (opcional)' })
+                </div>
+                @!textarea.control({
+                  value: track.description || '',
+                  placeholder:
+                    'Descreva o que será estudado nesta trilha, tópicos principais ou observações...',
+                  'x-model': 'previewDesc',
+                  rows: 4,
+                })
+                @!field.error()
+              @end
+            </div>
+          </section>
+
+          <div
+            class="surface-card"
+            style="padding: 16px 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;"
+          >
+            @link({
+              route: 'tracks.show',
+              routeParams: { id: track.id },
+              class: 'btn btn--ghost',
+            })
+              Cancelar
+            @end
+
+            <button type="submit" class="btn btn--primary" x-bind:disabled="submitting">
+              <span x-text="submitting ? 'Salvando…' : 'Salvar Alterações'">Salvar Alterações</span>
+              @svg('lucide:check', { width: 16, height: 16 })
+            </button>
+          </div>
+        @end
+      </div>
+      {{-- Right Column: Live Preview --}}
+      <aside style="display: flex; flex-direction: column; gap: 20px; position: sticky; top: 88px;">
+        <div class="surface-card" style="padding: 20px 22px;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"
+          >
+            <span
+              style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2);"
+            >
+              @svg('lucide:eye', {
+                width: 15,
+                height: 15,
+                style: 'color: var(--primary);',
+              })
+              
+              Preview em Tempo Real
+
+            </span>
+            <span class="mono" style="font-size: 11px; color: var(--muted);">No Dashboard</span>
+          </div>
+
+          <div class="track-card" style="padding: 18px;">
+            <div class="track-card__accent"></div>
+            <div>
+              <div class="track-card__badges">
+                <span class="badge">
+                  @svg('lucide:lock', { width: 11, height: 11 })
+                  <span>{{ track.isPublic ? 'Pública' : 'Privada' }}</span>
+                </span>
+                <span class="badge badge--primary">
+                  @svg('lucide:book-open', { width: 11, height: 11 })
+                  <span>Trilha Ativa</span>
+                </span>
+              </div>
+
+              <h4
+                class="track-card__title"
+                style="font-size: 16.5px; margin-top: 12px;"
+                x-text="previewTitle.trim() ? previewTitle : 'Título da sua trilha acadêmica'"
+              >
+                {{ track.title }}
+              </h4>
+
+              <p
+                class="track-card__desc"
+                style="font-size: 13px;"
+                x-text="previewDesc.trim() ? previewDesc : 'Sem descrição informada.'"
+              >
+                {{ track.description || 'Sem descrição informada.' }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+@end

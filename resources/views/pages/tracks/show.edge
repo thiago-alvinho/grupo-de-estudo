@@ -1,0 +1,550 @@
+@let(activeIndex = activeLesson ? lessons.findIndex((l) => l.id === activeLesson.id) : -1)
+@let(prevLesson = activeIndex > 0 ? lessons[activeIndex - 1] : null)
+@let(nextLesson =
+  activeIndex >= 0 && activeIndex < lessons.length - 1 ? lessons[activeIndex + 1] : null)
+@let(pendingCount = totalLessons - completedLessons)
+@layouts.app({
+  title: track.title,
+  breadcrumb: track.title,
+})
+  {{-- SUB-NAV & TRACK TITLE BANNER --}}
+  <div class="track-banner">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      @link({ route: 'tracks.index', class: 'back-link' })
+        @svg('lucide:arrow-left', { width: 15, height: 15 })
+        <span>Voltar para Trilhas</span>
+      @end
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+        <h1
+          class="display-font"
+          style="font-size: 24px; font-weight: 700; letter-spacing: -0.02em;"
+        >
+          {{ track.title }}
+        </h1>
+
+        <span class="badge">
+          @if(track.isPublic)
+            @svg('lucide:globe', { width: 12, height: 12 })
+            <span>Pública</span>
+          @else
+            @svg('lucide:lock', { width: 12, height: 12 })
+            <span>Privada</span>
+          @end
+        </span>
+
+        <span class="badge badge--primary">
+          @svg('lucide:play-circle', { width: 12, height: 12 })
+          <span>{{ totalLessons }} {{ totalLessons === 1 ? 'videoaula' : 'videoaulas' }}</span>
+        </span>
+      </div>
+      @if(track.description)
+        <p style="font-size: 14px; color: var(--muted); max-width: 740px; line-height: 1.55;">
+          {{ track.description }}
+        </p>
+      @end
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+      @link({
+        route: 'tracks.edit',
+        routeParams: { id: track.id },
+        class: 'btn btn--secondary btn--sm',
+      })
+        @svg('lucide:pencil', { width: 14, height: 14 })
+        <span>Editar Trilha</span>
+      @end
+      @form({
+        route: 'tracks.destroy',
+        routeParams: { id: track.id },
+        onsubmit:
+          "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
+      })
+        <button type="submit" class="btn btn--danger btn--sm">
+          @svg('lucide:trash-2', { width: 14, height: 14 })
+          <span>Excluir</span>
+        </button>
+      @end
+    </div>
+  </div>
+  {{-- ASYMMETRIC TWO-COLUMN STUDY WORKSPACE --}}
+  <div class="study-grid">
+    {{-- LEFT COLUMN: Video Player, Lesson Controls, Stepper & Personal Notes --}}
+    <div class="study-left">
+      @if(activeLesson)
+        {{-- 16:9 YouTube Player Card --}}
+        <div class="player-card">
+          <div class="player-frame">
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/{{ activeLesson.youtubeVideoId }}?rel=0"
+              title="{{ activeLesson.title }}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+        {{-- Lesson Control & Status Bar --}}
+        <div class="lesson-control-bar">
+          <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge--primary">
+                Aula
+                {{ activeLesson.number }}
+                de
+                {{ totalLessons }}
+              </span>
+              <span class="mono" style="font-size: 12px; color: var(--muted);">
+                • YouTube ID:
+                {{ activeLesson.youtubeVideoId }}
+              </span>
+            </div>
+            <h2
+              class="display-font"
+              style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em;"
+            >
+              {{ String(activeLesson.number).padStart(2, '0') }}.
+              {{ activeLesson.title }}
+            </h2>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+            <a
+              href="{{ activeLesson.youtubeUrl }}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn--secondary btn--sm"
+            >
+              @svg('lucide:external-link', { width: 14, height: 14 })
+              <span>Abrir no YouTube</span>
+            </a>
+            @form({
+              route: 'lessons.toggle_progress',
+              routeParams: { trackId: track.id, id: activeLesson.id },
+              method: 'POST',
+            })
+              <input type="hidden" name="activeLessonId" value="{{ activeLesson.id }}" />
+              <button
+                type="submit"
+                class="btn {{ activeLesson.isCompleted ? 'btn--success' : 'btn--primary' }}"
+              >
+                @if(activeLesson.isCompleted)
+                  @svg('lucide:check-circle-2', { width: 17, height: 17 })
+                  <span>Concluída</span>
+                @else
+                  @svg('lucide:check', { width: 17, height: 17 })
+                  <span>Marcar como concluída</span>
+                @end
+              </button>
+            @end
+          </div>
+        </div>
+        {{-- Previous / Next Lesson Quick Stepper --}}
+        @if(prevLesson || nextLesson)
+          <div class="lesson-stepper">
+            @if(prevLesson)
+              @link({
+                route: 'tracks.show',
+                routeParams: { id: track.id },
+                routeOptions: { qs: { lesson: prevLesson.id } },
+                class: 'lesson-stepper__link',
+              })
+                @svg('lucide:arrow-left', { width: 16, height: 16 })
+                <span>
+                  Aula Anterior:
+                  {{ String(prevLesson.number).padStart(2, '0') }}.
+                  {{ prevLesson.title }}
+                </span>
+              @end
+            @else
+              <span></span>
+            @end
+            @if(nextLesson)
+              @link({
+                route: 'tracks.show',
+                routeParams: { id: track.id },
+                routeOptions: { qs: { lesson: nextLesson.id } },
+                class: 'lesson-stepper__link lesson-stepper__link--next',
+              })
+                <span>
+                  Próxima Aula:
+                  {{ String(nextLesson.number).padStart(2, '0') }}.
+                  {{ nextLesson.title }}
+                </span>
+                @svg('lucide:arrow-right', { width: 16, height: 16 })
+              @end
+            @end
+          </div>
+        @end
+        {{-- Lesson Notes Container (persisted per lesson in browser storage) --}}
+        <div
+          class="notes-card"
+          x-data="{
+            storageKey: 'gde_note_lesson_{{ activeLesson.id }}',
+            note: '',
+            savedAt: null,
+            init() {
+            this.note = localStorage.getItem(this.storageKey) || ''
+            },
+            saveNote() {
+            localStorage.setItem(this.storageKey, this.note)
+            const now = new Date()
+            this.savedAt = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            }
+            }"
+        >
+          <div class="notes-tabs">
+            <span class="notes-tab notes-tab--active">
+              @svg('lucide:notebook-pen', { width: 16, height: 16 })
+              <span>Anotações da Aula</span>
+            </span>
+          </div>
+
+          <div class="notes-body">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 8px;"
+            >
+              <label
+                class="field__label"
+                for="personal-note"
+                style="font-size: 14px; font-weight: 600; color: var(--ink);"
+              >
+                Caderno de Anotações —
+                {{ activeLesson.title }}
+              </label>
+              <span
+                class="mono"
+                style="font-size: 11.5px; color: var(--ok);"
+                x-show="savedAt"
+                x-cloak
+              >
+                ✓ Salvo às
+                <span x-text="savedAt"></span>
+              </span>
+            </div>
+
+            <textarea
+              id="personal-note"
+              class="field__input field__textarea"
+              rows="4"
+              placeholder="Escreva seus apontamentos desta aula, fórmulas importantes ou dúvidas para revisar depois..."
+              x-model="note"
+              x-on:input.debounce.500ms="saveNote()"
+            ></textarea>
+
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px;"
+              >
+                @svg('lucide:check', {
+                  width: 14,
+                  height: 14,
+                  style: 'color: var(--ok);',
+                })
+                
+                Salvo automaticamente neste navegador para esta aula
+
+              </span>
+              <button type="button" class="btn btn--primary btn--sm" x-on:click="saveNote()">
+                Salvar anotação
+              </button>
+            </div>
+          </div>
+        </div>
+      @else
+        <div class="panel">
+          <div class="empty">
+            <div class="empty__mark">
+              @svg('lucide:youtube', { width: 26, height: 26 })
+            </div>
+            <h1>Nenhuma videoaula nesta trilha ainda</h1>
+            <p>
+              Use o cartão
+              <strong>"Adicionar Nova Videoaula"</strong>
+              ao lado para colar o primeiro link do YouTube que você deseja estudar nesta trilha.
+            </p>
+          </div>
+        </div>
+      @end
+    </div>
+    {{-- RIGHT COLUMN: Playlist & Progress + Add New Lesson --}}
+    <aside
+      style="display: flex; flex-direction: column; gap: 20px;"
+      x-data="{ playlistFilter: 'all' }"
+    >
+      {{-- CARD 1: PLAYLIST & TRACK PROGRESS --}}
+      <div class="playlist-box">
+        <div class="playlist-box__head">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 class="display-font" style="font-size: 17px; font-weight: 600;">
+              Conteúdo da Trilha
+            </h3>
+            <span class="mono" style="font-size: 13px; color: var(--ink-2); font-weight: 600;">
+              {{ completedLessons }}
+              /
+              {{ totalLessons }}
+            </span>
+          </div>
+
+          <div class="progress">
+            <div class="progress__meta">
+              <span style="color: var(--muted);">Progresso total</span>
+              <span class="progress__pct progress__pct--ok">{{ progressPercent }}% Concluído</span>
+            </div>
+            <div class="progress__bar">
+              <div class="progress__fill" style="width: {{ progressPercent }}%;"></div>
+            </div>
+          </div>
+          @if(lessons.length > 0)
+            <div class="filter-pills" style="width: 100%; justify-content: space-between;">
+              <button
+                type="button"
+                class="filter-pill"
+                style="flex: 1;"
+                x-bind:class="playlistFilter === 'all' ? 'filter-pill--active' : ''"
+                x-on:click="playlistFilter = 'all'"
+              >
+                Todas ({{ totalLessons }})
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                style="flex: 1;"
+                x-bind:class="playlistFilter === 'pending' ? 'filter-pill--active' : ''"
+                x-on:click="playlistFilter = 'pending'"
+              >
+                Pendentes ({{ pendingCount }})
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                style="flex: 1;"
+                x-bind:class="playlistFilter === 'completed' ? 'filter-pill--active' : ''"
+                x-on:click="playlistFilter = 'completed'"
+              >
+                Concluídas ({{ completedLessons }})
+              </button>
+            </div>
+          @end
+        </div>
+        @if(lessons.length > 0)
+          <ul class="playlist-items">
+            @each(lesson in lessons)
+              @let(isCurrent = activeLesson && activeLesson.id === lesson.id)
+              <li
+                class="playlist-item {{ isCurrent ? 'playlist-item--active' : '' }}"
+                x-data="{ editing: false }"
+                x-show="playlistFilter === 'all' || (playlistFilter === 'completed' && {{ lesson.isCompleted }}) || (playlistFilter === 'pending' && !{{ lesson.isCompleted }})"
+              >
+                <div class="playlist-item__row">
+                  @form({
+                    route: 'lessons.toggle_progress',
+                    routeParams: { trackId: track.id, id: lesson.id },
+                    method: 'POST',
+                  })
+                    <input
+                      type="hidden"
+                      name="activeLessonId"
+                      value="{{ activeLesson ? activeLesson.id : lesson.id }}"
+                    />
+                    <button
+                      type="submit"
+                      class="lesson-check {{
+                        lesson.isCompleted
+                          ? 'lesson-check--done'
+                          : isCurrent
+                            ? 'lesson-check--playing'
+                            : ''
+                      }}"
+                      title="{{
+                        lesson.isCompleted
+                          ? 'Desmarcar conclusão'
+                          : 'Marcar aula como concluída'
+                      }}"
+                    >
+                      @if(lesson.isCompleted)
+                        @svg('lucide:check', { width: 13, height: 13 })
+                      @elseif(isCurrent)
+                        @svg('lucide:play', { width: 11, height: 11 })
+                      @end
+                    </button>
+                  @end
+                  @link({
+                    route: 'tracks.show',
+                    routeParams: { id: track.id },
+                    routeOptions: { qs: { lesson: lesson.id } },
+                    class: 'lesson-link',
+                  })
+                    <span
+                      class="lesson-link__title {{ lesson.isCompleted && !isCurrent ? 'lesson-link__title--done' : '' }}"
+                    >
+                      {{ String(lesson.number).padStart(2, '0') }}.
+                      {{ lesson.title }}
+                    </span>
+                    <span class="lesson-link__meta">
+                      <span>ID: {{ lesson.youtubeVideoId }}</span>
+                      @if(isCurrent)
+                        <span class="playing-pill">Tocando</span>
+                      @end
+                    </span>
+                  @end
+
+                  <div class="lesson-actions">
+                    <button
+                      type="button"
+                      class="iconbtn"
+                      style="width: 30px; height: 30px;"
+                      title="Editar aula"
+                      x-on:click="editing = !editing"
+                    >
+                      @svg('lucide:pencil', { width: 13, height: 13 })
+                    </button>
+                    @form({
+                      route: 'lessons.destroy',
+                      routeParams: { trackId: track.id, id: lesson.id },
+                      onsubmit: "return confirm('Remover este vídeo da trilha?');",
+                    })
+                      <button
+                        type="submit"
+                        class="iconbtn"
+                        style="width: 30px; height: 30px; color: var(--danger);"
+                        title="Remover aula"
+                      >
+                        @svg('lucide:trash-2', { width: 13, height: 13 })
+                      </button>
+                    @end
+                  </div>
+                </div>
+                {{-- Inline Edit Form --}}
+                <div class="lesson-edit-box" x-show="editing" x-cloak>
+                  @form({
+                    route: 'lessons.update',
+                    routeParams: { trackId: track.id, id: lesson.id },
+                  })
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <div class="field">
+                        <label class="field__label" for="edit_title_{{ lesson.id }}">
+                          Título da aula
+                        </label>
+                        <input
+                          id="edit_title_{{ lesson.id }}"
+                          name="title"
+                          type="text"
+                          class="field__input"
+                          value="{{ lesson.title }}"
+                          required
+                        />
+                      </div>
+                      <div class="field">
+                        <label class="field__label" for="edit_url_{{ lesson.id }}">
+                          Link do YouTube
+                        </label>
+                        <input
+                          id="edit_url_{{ lesson.id }}"
+                          name="youtubeUrl"
+                          type="url"
+                          class="field__input"
+                          value="{{ lesson.youtubeUrl }}"
+                          required
+                        />
+                      </div>
+                      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button
+                          type="button"
+                          class="btn btn--secondary btn--sm"
+                          x-on:click="editing = false"
+                        >
+                          Cancelar
+                        </button>
+                        <button type="submit" class="btn btn--primary btn--sm">Salvar</button>
+                      </div>
+                    </div>
+                  @end
+                </div>
+              </li>
+            @end
+          </ul>
+
+          <div class="playlist-box__foot">
+            <span>
+              Aulas pendentes:
+              <strong class="mono" style="color: var(--ink);">{{ pendingCount }}</strong>
+              de
+              {{ totalLessons }}
+            </span>
+          </div>
+        @else
+          <div
+            style="padding: 24px 20px; text-align: center; color: var(--muted); font-size: 13.5px;"
+          >
+            Sua playlist ainda está vazia. Adicione vídeos abaixo para começar a estudar!
+          </div>
+        @end
+      </div>
+      {{-- CARD 2: ADICIONAR NOVA VIDEOAULA (Compact Linear Form) --}}
+      <div class="surface-card" style="padding: 20px;">
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"
+        >
+          <h3
+            class="display-font"
+            style="font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"
+          >
+            @svg('lucide:youtube', {
+              width: 19,
+              height: 19,
+              style: 'color: var(--danger);',
+            })
+            <span>Adicionar Nova Videoaula</span>
+          </h3>
+          <span class="mono" style="font-size: 10.5px; font-weight: 700; color: var(--muted);">
+            YOUTUBE
+          </span>
+        </div>
+        @form({
+          route: 'lessons.store',
+          routeParams: { trackId: track.id },
+          method: 'POST',
+          'x-data': '{ submitting: false }',
+          'x-on:submit': 'submitting = true',
+        })
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            @field.root({ name: 'title' })
+              @!field.label({ text: 'Título da aula' })
+              @!input.control({
+                placeholder: 'Ex: Teorema do Confronto e Exemplos',
+                required: true,
+              })
+              @!field.error()
+            @end
+            @field.root({ name: 'youtubeUrl' })
+              @!field.label({ text: 'Link do vídeo no YouTube' })
+              <div class="field__input-wrap">
+                <span class="field__icon-left">
+                  @svg('lucide:link', { width: 16, height: 16 })
+                </span>
+                @!input.control({
+                  type: 'url',
+                  placeholder: 'https://www.youtube.com/watch?v=...',
+                  class: 'field__input--with-left-icon',
+                  required: true,
+                })
+              </div>
+              @!field.error()
+            @end
+
+            <button type="submit" class="btn btn--primary btn--block" x-bind:disabled="submitting">
+              @svg('lucide:plus-circle', { width: 17, height: 17 })
+              <span x-text="submitting ? 'Adicionando…' : '+ Adicionar à Trilha'">
+                + Adicionar à Trilha
+              </span>
+            </button>
+          </div>
+        @end
+      </div>
+    </aside>
+  </div>
+@end

@@ -1,0 +1,38 @@
+@let(label = $props.get('label'))
+@let(value = $props.get('value'))
+@let(unit = $props.get('unit'))
+@let(icon = $props.get('icon', 'lucide:book-open'))
+@let(footText = $props.get('footText'))
+@let(footIcon = $props.get('footIcon', 'lucide:trending-up'))
+@let(variant = $props.get('variant', 'primary'))
+
+<div class="stat-card">
+  <div>
+    <div class="stat-card__top">
+      <span class="stat-card__label">{{ label }}</span>
+      <div class="stat-card__icon {{ variant === 'ok' ? 'stat-card__icon--ok' : '' }}">
+        @svg(icon, { width: 20, height: 20 })
+      </div>
+    </div>
+    <div class="stat-card__body">
+      <span class="stat-card__value">{{ value }}</span>
+      @if(unit)
+        <span class="stat-card__unit">{{ unit }}</span>
+      @end
+    </div>
+  </div>
+  @if(footText)
+    <div
+      class="stat-card__foot {{
+        variant === 'ok'
+          ? 'stat-card__foot--ok'
+          : variant === 'primary'
+            ? 'stat-card__foot--primary'
+            : ''
+      }}"
+    >
+      @svg(footIcon, { width: 15, height: 15 })
+      <span>{{ footText }}</span>
+    </div>
+  @end
+</div>

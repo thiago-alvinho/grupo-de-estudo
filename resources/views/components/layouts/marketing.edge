@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html
+  lang="pt-BR"
+  data-theme="{{
+    request.plainCookie('app_theme', {
+      defaultValue: 'light',
+      encoded: false,
+    })
+  }}"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grupo de Estudo — Plataforma Colaborativa Acadêmica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('dumper')
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="topbar__left">
+          @!logo()
+        </div>
+        <div class="topbar__right">
+          @!themeToggle()
+          @if(auth?.user)
+            @link({ route: 'tracks.index', class: 'btn btn--primary btn--sm' })
+              Minhas Trilhas
+            @end
+          @else
+            @link({ route: 'session.create', class: 'btn btn--ghost btn--sm' })
+              Entrar
+            @end
+            @link({ route: 'new_account.create', class: 'btn btn--primary btn--sm' })
+              Criar conta
+            @end
+          @end
+        </div>
+      </div>
+    </header>
+    {{{ await $slots.main() }}}
+    @!footer()
+    @include('partials/flash_alerts')
+  </body>
+</html>

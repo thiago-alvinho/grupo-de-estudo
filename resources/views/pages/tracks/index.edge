@@ -1,0 +1,199 @@
+@let(firstName = auth.user?.fullName ? auth.user.fullName.split(' ')[0] : 'Estudante')
+@let(completionRate =
+  summary.totalLessons > 0
+    ? Math.round((summary.completedLessons / summary.totalLessons) * 100)
+    : 0)
+@layouts.app({ title: 'Minhas Trilhas de Estudo' })
+  <div
+    x-data="{
+      search: '',
+      statusFilter: 'all',
+      visibilityFilter: 'all',
+      viewMode: 'grid',
+      matchesTrack(ds) {
+      const q = this.search.trim().toLowerCase()
+      if (q && !ds.title.includes(q) && !ds.desc.includes(q)) return false
+      if (this.statusFilter !== 'all' && ds.status !== this.statusFilter) return false
+      if (this.visibilityFilter !== 'all' && ds.visibility !== this.visibilityFilter) return false
+      return true
+      }
+      }"
+    style="display: flex; flex-direction: column; gap: 26px;"
+  >
+    {{-- Page Header & Greeting --}}
+    <div class="hero-greeting">
+      <div>
+        <h1 class="hero-greeting__title"><span>Olá, {{ firstName }}!</span> <span>👋</span></h1>
+        <p class="hero-greeting__sub">
+          Continue de onde parou ou crie novas trilhas de estudo organizadas por videoaulas do YouTube.
+        </p>
+      </div>
+      @link({ route: 'tracks.create', class: 'btn btn--primary' })
+        @svg('lucide:plus', { width: 18, height: 18 })
+        <span>Criar Nova Trilha</span>
+      @end
+    </div>
+    {{-- Search & Filter Control Bar --}}
+    <div class="filter-bar">
+      <div class="filter-bar__search">
+        <span class="filter-bar__search-icon">
+          @svg('lucide:search', { width: 17, height: 17 })
+        </span>
+        <input
+          type="text"
+          class="filter-bar__input"
+          placeholder="Buscar trilhas, disciplinas ou tópicos..."
+          x-model="search"
+        />
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+        <select
+          class="field__input"
+          style="width: auto; height: 38px; padding: 0 32px 0 12px; font-size: 13px;"
+          x-model="statusFilter"
+          aria-label="Filtrar por status"
+        >
+          <option value="all">Status: Todas as Trilhas</option>
+          <option value="in_progress">Em Andamento</option>
+          <option value="completed">Concluídas</option>
+          <option value="not_started">Não Iniciadas</option>
+        </select>
+
+        <div class="filter-pills" role="group" aria-label="Filtrar por visibilidade">
+          <button
+            type="button"
+            class="filter-pill"
+            x-bind:class="visibilityFilter === 'all' ? 'filter-pill--active' : ''"
+            x-on:click="visibilityFilter = 'all'"
+          >
+            Todas
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            x-bind:class="visibilityFilter === 'private' ? 'filter-pill--active' : ''"
+            x-on:click="visibilityFilter = 'private'"
+          >
+            Privadas
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            x-bind:class="visibilityFilter === 'public' ? 'filter-pill--active' : ''"
+            x-on:click="visibilityFilter = 'public'"
+          >
+            Públicas
+          </button>
+        </div>
+      </div>
+    </div>
+    {{-- Performance KPI Stat Cards (3-column Grid) --}}
+    <section class="stats-grid">
+      @!statCard({
+        label: 'Trilhas Criadas',
+        value: summary.totalTracks,
+        unit: summary.totalTracks === 1 ? 'trilha ativa' : 'trilhas ativas',
+        icon: 'lucide:book-open',
+        footText: 'Organizadas no seu painel',
+        footIcon: 'lucide:trending-up',
+        variant: 'primary',
+      })
+      @!statCard({
+        label: 'Vídeos Cadastrados',
+        value: summary.totalLessons,
+        unit: summary.totalLessons === 1 ? 'videoaula no total' : 'videoaulas no total',
+        icon: 'lucide:youtube',
+        footText: `${summary.completedLessons} videoaulas já assistidas`,
+        footIcon: 'lucide:clock',
+        variant: 'neutral',
+      })
+      @!statCard({
+        label: 'Aulas Concluídas & Constância',
+        value: `${completionRate}%`,
+        unit: 'taxa média de conclusão',
+        icon: 'lucide:check-circle-2',
+        footText: `${summary.completedLessons} de ${summary.totalLessons} aulas concluídas`,
+        footIcon: 'lucide:flame',
+        variant: 'ok',
+      })
+    </section>
+    {{-- Study Tracks Section Header --}}
+    <div class="tracks-section-head">
+      <div class="tracks-section-head__left">
+        <h2 class="tracks-section-head__title">Minhas Trilhas de Estudo</h2>
+        <span class="badge">
+          {{ summary.totalTracks }}
+          {{ summary.totalTracks === 1 ? 'trilha' : 'trilhas' }}
+        </span>
+      </div>
+
+      <div class="filter-pills" role="group" aria-label="Modo de visualização">
+        <button
+          type="button"
+          class="filter-pill"
+          x-bind:class="viewMode === 'grid' ? 'filter-pill--active' : ''"
+          x-on:click="viewMode = 'grid'"
+          title="Visualização em Grade"
+        >
+          @svg('lucide:layout-grid', { width: 15, height: 15 })
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          x-bind:class="viewMode === 'list' ? 'filter-pill--active' : ''"
+          x-on:click="viewMode = 'list'"
+          title="Visualização em Lista"
+        >
+          @svg('lucide:list', { width: 15, height: 15 })
+        </button>
+      </div>
+    </div>
+    {{-- Study Tracks Grid or Empty State --}}
+    @if(tracks.length > 0)
+      <div class="tracks-grid" x-bind:class="viewMode === 'list' ? 'tracks-grid--list' : ''">
+        @each(track in tracks)
+          @!trackCard({ track })
+        @end
+      </div>
+    @else
+      <div class="panel">
+        <div class="empty">
+          <div class="empty__mark">
+            @svg('lucide:youtube', { width: 26, height: 26 })
+          </div>
+          <h1>Você ainda não criou nenhuma trilha</h1>
+          <p>
+            Monte sua primeira trilha de estudos privada adicionando vídeos do YouTube e acompanhe seu progresso aula por aula.
+          </p>
+          <div style="margin-top: 6px;">
+            @link({ route: 'tracks.create', class: 'btn btn--primary' })
+              @svg('lucide:plus', { width: 16, height: 16 })
+              <span>Criar minha primeira trilha</span>
+            @end
+          </div>
+        </div>
+      </div>
+    @end
+    {{-- Quick Help & Collaborative Callout Banner --}}
+    <div class="collab-banner">
+      <div class="collab-banner__left">
+        <div class="collab-banner__icon">
+          @svg('lucide:graduation-cap', { width: 24, height: 24 })
+        </div>
+        <div>
+          <h4 class="display-font" style="font-size: 16.5px; font-weight: 600;">
+            Estude com constância e organize suas playlists acadêmicas
+          </h4>
+          <p style="font-size: 13.5px; color: var(--muted); margin-top: 2px;">
+            Adicione videoaulas do YouTube em cada trilha, marque as aulas concluídas e mantenha suas anotações sempre à mão.
+          </p>
+        </div>
+      </div>
+      @link({ route: 'tracks.create', class: 'btn btn--secondary btn--sm' })
+        @svg('lucide:plus-circle', { width: 15, height: 15 })
+        <span>Nova Trilha de Estudo</span>
+      @end
+    </div>
+  </div>
+@end

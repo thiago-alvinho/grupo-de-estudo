@@ -1,0 +1,106 @@
+@layouts.auth({ mode: 'login' })
+  <div>
+    <div class="auth-badge">
+      <span class="auth-badge__dot"></span>
+      <span>Acesso à Plataforma</span>
+    </div>
+    <h1 class="auth-heading">Bem-vindo de volta ao Grupo de Estudo</h1>
+    <p class="auth-subheading">
+      Acesse suas trilhas de estudo, playlists do YouTube e progresso diário.
+    </p>
+  </div>
+  {{-- Mode Toggle Tabs (Entrar / Criar conta) --}}
+  <div class="auth-tabs" role="tablist">
+    @link({ route: 'session.create', class: 'auth-tab auth-tab--active' })
+      @svg('lucide:log-in', { width: 15, height: 15 })
+      <span>Entrar</span>
+    @end
+    @link({ route: 'new_account.create', class: 'auth-tab' })
+      @svg('lucide:user-plus', { width: 15, height: 15 })
+      <span>Criar conta</span>
+    @end
+  </div>
+  @form({
+    route: 'session.store',
+    method: 'POST',
+    class: 'auth-form',
+    'x-data': '{ submitting: false, showPassword: false }',
+    'x-on:submit': 'submitting = true',
+  })
+    @field.root({ name: 'email' })
+      @!field.label({ text: 'E-mail acadêmico ou pessoal' })
+      <div class="field__input-wrap">
+        <span class="field__icon-left">
+          @svg('lucide:mail', { width: 17, height: 17 })
+        </span>
+        @!input.control({
+          type: 'email',
+          autocomplete: 'username',
+          placeholder: 'seu.email@exemplo.com',
+          class: 'field__input--with-left-icon',
+          required: true,
+        })
+      </div>
+      @!field.error()
+    @end
+    @field.root({ name: 'password' })
+      <div class="field__label-row">
+        @!field.label({ text: 'Senha' })
+      </div>
+      <div class="field__input-wrap">
+        <span class="field__icon-left">
+          @svg('lucide:lock', { width: 17, height: 17 })
+        </span>
+        @!input.control({
+          type: 'password',
+          autocomplete: 'current-password',
+          placeholder: 'Mínimo de 8 caracteres',
+          class: 'field__input--with-left-icon field__input--with-right-icon',
+          'x-bind:type': "showPassword ? 'text' : 'password'",
+          required: true,
+        })
+        <button
+          type="button"
+          class="field__icon-right"
+          aria-label="Alternar visibilidade da senha"
+          x-on:click="showPassword = !showPassword"
+        >
+          <span x-show="!showPassword">
+            @svg('lucide:eye', { width: 17, height: 17 })
+          </span>
+          <span x-show="showPassword" x-cloak>
+            @svg('lucide:eye-off', { width: 17, height: 17 })
+          </span>
+        </button>
+      </div>
+      @!field.error()
+    @end
+
+    <button
+      type="submit"
+      class="btn btn--primary btn--block"
+      style="margin-top: 6px;"
+      x-bind:disabled="submitting"
+    >
+      <span x-text="submitting ? 'Entrando…' : 'Entrar na plataforma'">Entrar na plataforma</span>
+      @svg('lucide:arrow-right', { width: 16, height: 16 })
+    </button>
+  @end
+
+  <p class="auth-switch">
+    
+    Não tem conta?
+
+    @link({ route: 'new_account.create', class: 'il' })
+      Cadastre-se gratuitamente
+    @end
+  </p>
+
+  <p class="auth-terms">
+    Ao continuar, você concorda com os
+    <a href="#termos" class="il">Termos de Uso</a>
+    e a
+    <a href="#privacidade" class="il">Política de Privacidade</a>
+    do Grupo de Estudo.
+  </p>
+@end
