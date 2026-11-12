@@ -5,20 +5,26 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 /**
  * StudyTracksController handles CRUD operations for a user's study tracks
- * and displays track progress and the YouTube study player.
+ * and public platform tracks created by administrators, plus individual
+ * progress calculation and the YouTube study player.
  */
 export default class StudyTracksController {
   /**
-   * List all study tracks belonging to the authenticated user with progress stats.
+   * List study tracks accessible to the authenticated user (their own tracks
+   * plus official public tracks) with individual progress stats.
    */
   async index({ auth, view }: HttpContext) {
     const user = auth.user!
 
     const tracks = await StudyTrack.query()
-      .where('userId', user.id)
+      .where((query) => {
+        query.where('userId', user.id).orWhere('isPublic', true)
+      })
+      .preload('user')
       .preload('lessons', (query) => {
         query.orderBy('position', 'asc').orderBy('id', 'asc')
       })
+      .orderBy('isPublic', 'desc')
       .orderBy('createdAt', 'desc')
 
     const allLessonIds = tracks.flatMap((track) => track.lessons.map((lesson) => lesson.id))
@@ -34,12 +40,16 @@ export default class StudyTracksController {
       const completedLessons = track.lessons.filter((l) => completedSet.has(l.id)).length
       const progressPercent =
         totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+      const canManage = track.userId === user.id || user.isAdmin
 
       return {
         id: track.id,
+        userId: track.userId,
         title: track.title,
         description: track.description,
         isPublic: track.isPublic,
+        canManage,
+        authorName: track.user ? track.user.fullName || track.user.email : null,
         createdAt: track.createdAt,
         totalLessons,
         completedLessons,
@@ -68,38 +78,47 @@ export default class StudyTracksController {
 
   /**
    * Store a newly created study track in the database.
+   * Only administrators can create public tracks (isPublic = true).
    */
   async store({ request, response, auth, session }: HttpContext) {
     const user = auth.user!
-    const { title, description } = await request.validateUsing(studyTrackValidator)
+    const { title, description, isPublic } = await request.validateUsing(studyTrackValidator)
 
     const track = await StudyTrack.create({
       userId: user.id,
       title,
       description: description || null,
-      isPublic: false,
+      isPublic: user.isAdmin ? Boolean(isPublic) : false,
     })
 
     session.flash(
       'success',
-      'Trilha criada com sucesso! Agora adicione os vídeos do YouTube que deseja estudar.'
+      track.isPublic
+        ? 'Disciplina pública criada com sucesso! Adicione as videoaulas abaixo.'
+        : 'Trilha privada criada com sucesso! Adicione os vídeos do YouTube abaixo.'
     )
     return response.redirect().withQs(false).toRoute('tracks.show', { id: track.id })
   }
 
   /**
-   * Display a single study track, its YouTube player, lesson playlist, and progress.
+   * Display a single study track (private to owner or public), its YouTube player,
+   * lesson playlist, and the authenticated user's individual progress.
    */
   async show({ params, request, view, auth }: HttpContext) {
     const user = auth.user!
 
     const track = await StudyTrack.query()
       .where('id', params.id)
-      .where('userId', user.id)
+      .where((query) => {
+        query.where('userId', user.id).orWhere('isPublic', true)
+      })
+      .preload('user')
       .preload('lessons', (query) => {
         query.orderBy('position', 'asc').orderBy('id', 'asc')
       })
       .firstOrFail()
+
+    const canManage = track.userId === user.id || user.isAdmin
 
     const lessonIds = track.lessons.map((l) => l.id)
     const progresses =
@@ -133,6 +152,7 @@ export default class StudyTracksController {
 
     return view.render('pages/tracks/show', {
       track,
+      canManage,
       lessons,
       activeLesson,
       totalLessons,
@@ -148,26 +168,37 @@ export default class StudyTracksController {
     const user = auth.user!
     const track = await StudyTrack.query()
       .where('id', params.id)
-      .where('userId', user.id)
+      .where((query) => {
+        if (!user.isAdmin) {
+          query.where('userId', user.id)
+        }
+      })
       .firstOrFail()
 
     return view.render('pages/tracks/edit', { track })
   }
 
   /**
-   * Update the study track title and description.
+   * Update the study track title, description, and (for admins) visibility.
    */
   async update({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
     const track = await StudyTrack.query()
       .where('id', params.id)
-      .where('userId', user.id)
+      .where((query) => {
+        if (!user.isAdmin) {
+          query.where('userId', user.id)
+        }
+      })
       .firstOrFail()
 
-    const { title, description } = await request.validateUsing(studyTrackValidator)
+    const { title, description, isPublic } = await request.validateUsing(studyTrackValidator)
 
     track.title = title
     track.description = description || null
+    if (user.isAdmin && isPublic !== undefined) {
+      track.isPublic = Boolean(isPublic)
+    }
     await track.save()
 
     session.flash('success', 'Trilha atualizada com sucesso!')
@@ -181,7 +212,11 @@ export default class StudyTracksController {
     const user = auth.user!
     const track = await StudyTrack.query()
       .where('id', params.id)
-      .where('userId', user.id)
+      .where((query) => {
+        if (!user.isAdmin) {
+          query.where('userId', user.id)
+        }
+      })
       .firstOrFail()
 
     await track.delete()

@@ -43,6 +43,11 @@
             {{ auth.user.initials }}
           </span>
           <span class="user-pill__name">{{ auth.user.fullName || auth.user.email }}</span>
+          @if(auth.user.isAdmin)
+            <span class="badge badge--primary" style="font-size: 10px; padding: 2px 7px;">
+              Admin
+            </span>
+          @end
           @form({ route: 'session.destroy', method: 'POST' })
             <button type="submit" class="btn btn--secondary btn--sm" title="Sair da conta">
               @svg('lucide:log-out', { width: 14, height: 14 })

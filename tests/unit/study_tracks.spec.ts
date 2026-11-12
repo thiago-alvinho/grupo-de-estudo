@@ -105,4 +105,71 @@ test.group('Study Tracks & YouTube Lessons', (group) => {
     const remainingLessons = await Lesson.query().where('studyTrackId', track.id)
     assert.lengthOf(remainingLessons, 0)
   })
+
+  test('admin user can create public tracks and students track independent progress', async ({
+    assert,
+  }) => {
+    const admin = await User.create({
+      fullName: 'Professor Admin',
+      email: 'admin@teste.com',
+      password: 'password123',
+      role: 'admin',
+    })
+
+    const studentA = await User.create({
+      fullName: 'Aluna A',
+      email: 'aluna.a@teste.com',
+      password: 'password123',
+    })
+
+    const studentB = await User.create({
+      fullName: 'Aluno B',
+      email: 'aluno.b@teste.com',
+      password: 'password123',
+    })
+
+    assert.isTrue(admin.isAdmin)
+    assert.isFalse(studentA.isAdmin)
+    assert.equal(studentA.role, 'student')
+
+    const validatedPayload = await studyTrackValidator.validate({
+      title: 'Física I — Mecânica Clássica',
+      description: 'Disciplina oficial pública para todos os alunos',
+      isPublic: true,
+    })
+
+    const publicTrack = await StudyTrack.create({
+      userId: admin.id,
+      title: validatedPayload.title,
+      description: validatedPayload.description || null,
+      isPublic: admin.isAdmin ? Boolean(validatedPayload.isPublic) : false,
+    })
+
+    assert.isTrue(publicTrack.isPublic)
+
+    const lesson = await Lesson.create({
+      studyTrackId: publicTrack.id,
+      title: 'Aula 01 - Cinemática Vetorial',
+      youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      youtubeVideoId: 'dQw4w9WgXcQ',
+      position: 1,
+    })
+
+    // Student A completes the lesson, Student B has not completed it yet
+    await LessonProgress.create({
+      userId: studentA.id,
+      lessonId: lesson.id,
+      completedAt: DateTime.now(),
+    })
+
+    const progressA = await LessonProgress.query()
+      .where('userId', studentA.id)
+      .where('lessonId', lesson.id)
+    const progressB = await LessonProgress.query()
+      .where('userId', studentB.id)
+      .where('lessonId', lesson.id)
+
+    assert.lengthOf(progressA, 1)
+    assert.lengthOf(progressB, 0)
+  })
 })

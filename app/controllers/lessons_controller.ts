@@ -6,18 +6,22 @@ import { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 
 /**
- * LessonsController manages YouTube video lessons inside a user's StudyTrack
- * and tracks completion progress.
+ * LessonsController manages YouTube video lessons inside a StudyTrack
+ * and tracks completion progress per authenticated user.
  */
 export default class LessonsController {
   /**
-   * Add a new YouTube video lesson to a study track.
+   * Add a new YouTube video lesson to a study track (owner or admin only).
    */
   async store({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
     const track = await StudyTrack.query()
       .where('id', params.trackId)
-      .where('userId', user.id)
+      .where((query) => {
+        if (!user.isAdmin) {
+          query.where('userId', user.id)
+        }
+      })
       .firstOrFail()
 
     const { title, youtubeUrl } = await request.validateUsing(lessonValidator)
@@ -46,13 +50,17 @@ export default class LessonsController {
   }
 
   /**
-   * Update a lesson's title or YouTube URL.
+   * Update a lesson's title or YouTube URL (owner or admin only).
    */
   async update({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
     const track = await StudyTrack.query()
       .where('id', params.trackId)
-      .where('userId', user.id)
+      .where((query) => {
+        if (!user.isAdmin) {
+          query.where('userId', user.id)
+        }
+      })
       .firstOrFail()
 
     const lesson = await Lesson.query()
@@ -76,13 +84,17 @@ export default class LessonsController {
   }
 
   /**
-   * Delete a lesson from a study track.
+   * Delete a lesson from a study track (owner or admin only).
    */
   async destroy({ params, response, auth, session }: HttpContext) {
     const user = auth.user!
     const track = await StudyTrack.query()
       .where('id', params.trackId)
-      .where('userId', user.id)
+      .where((query) => {
+        if (!user.isAdmin) {
+          query.where('userId', user.id)
+        }
+      })
       .firstOrFail()
 
     const lesson = await Lesson.query()

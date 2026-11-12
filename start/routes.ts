@@ -43,7 +43,6 @@ router
     router
       .post('/tracks/:trackId/lessons/:id/toggle', [controllers.Lessons, 'toggleProgress'])
       .as('lessons.toggle_progress')
-
     router.post('logout', [controllers.Session, 'destroy'])
   })
   .use(middleware.auth())

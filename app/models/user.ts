@@ -2,7 +2,7 @@ import { UserSchema } from '#database/schema'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
-import { hasMany } from '@adonisjs/lucid/orm'
+import { beforeCreate, hasMany } from '@adonisjs/lucid/orm'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import StudyTrack from '#models/study_track'
 import LessonProgress from '#models/lesson_progress'
@@ -13,11 +13,25 @@ import LessonProgress from '#models/lesson_progress'
  * through the withAuthFinder mixin.
  */
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+  @beforeCreate()
+  static assignDefaultRole(user: User) {
+    if (!user.role) {
+      user.role = 'student'
+    }
+  }
+
   @hasMany(() => StudyTrack)
   declare studyTracks: HasMany<typeof StudyTrack>
 
   @hasMany(() => LessonProgress)
   declare lessonProgresses: HasMany<typeof LessonProgress>
+
+  /**
+   * Returns true when the user has the administrative role.
+   */
+  get isAdmin() {
+    return this.role === 'admin'
+  }
 
   /**
    * Get the user's initials from their full name or email.

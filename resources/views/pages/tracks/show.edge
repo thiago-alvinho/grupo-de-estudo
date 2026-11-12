@@ -44,28 +44,29 @@
         </p>
       @end
     </div>
-
-    <div style="display: flex; align-items: center; gap: 8px;">
-      @link({
-        route: 'tracks.edit',
-        routeParams: { id: track.id },
-        class: 'btn btn--secondary btn--sm',
-      })
-        @svg('lucide:pencil', { width: 14, height: 14 })
-        <span>Editar Trilha</span>
-      @end
-      @form({
-        route: 'tracks.destroy',
-        routeParams: { id: track.id },
-        onsubmit:
-          "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
-      })
-        <button type="submit" class="btn btn--danger btn--sm">
-          @svg('lucide:trash-2', { width: 14, height: 14 })
-          <span>Excluir</span>
-        </button>
-      @end
-    </div>
+    @if(canManage)
+      <div style="display: flex; align-items: center; gap: 8px;">
+        @link({
+          route: 'tracks.edit',
+          routeParams: { id: track.id },
+          class: 'btn btn--secondary btn--sm',
+        })
+          @svg('lucide:pencil', { width: 14, height: 14 })
+          <span>Editar Trilha</span>
+        @end
+        @form({
+          route: 'tracks.destroy',
+          routeParams: { id: track.id },
+          onsubmit:
+            "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
+        })
+          <button type="submit" class="btn btn--danger btn--sm">
+            @svg('lucide:trash-2', { width: 14, height: 14 })
+            <span>Excluir</span>
+          </button>
+        @end
+      </div>
+    @end
   </div>
   {{-- ASYMMETRIC TWO-COLUMN STUDY WORKSPACE --}}
   <div class="study-grid">
@@ -245,7 +246,9 @@
                   style: 'color: var(--ok);',
                 })
                 
+                
                 Salvo automaticamente neste navegador para esta aula
+
 
               </span>
               <button type="button" class="btn btn--primary btn--sm" x-on:click="saveNote()">
@@ -261,11 +264,17 @@
               @svg('lucide:youtube', { width: 26, height: 26 })
             </div>
             <h1>Nenhuma videoaula nesta trilha ainda</h1>
-            <p>
-              Use o cartão
-              <strong>"Adicionar Nova Videoaula"</strong>
-              ao lado para colar o primeiro link do YouTube que você deseja estudar nesta trilha.
-            </p>
+            @if(canManage)
+              <p>
+                Use o cartão
+                <strong>"Adicionar Nova Videoaula"</strong>
+                ao lado para colar o primeiro link do YouTube que você deseja estudar nesta trilha.
+              </p>
+            @else
+              <p>
+                O professor responsável por esta disciplina pública ainda não cadastrou videoaulas.
+              </p>
+            @end
           </div>
         </div>
       @end
@@ -391,79 +400,82 @@
                       @end
                     </span>
                   @end
-
-                  <div class="lesson-actions">
-                    <button
-                      type="button"
-                      class="iconbtn"
-                      style="width: 30px; height: 30px;"
-                      title="Editar aula"
-                      x-on:click="editing = !editing"
-                    >
-                      @svg('lucide:pencil', { width: 13, height: 13 })
-                    </button>
-                    @form({
-                      route: 'lessons.destroy',
-                      routeParams: { trackId: track.id, id: lesson.id },
-                      onsubmit: "return confirm('Remover este vídeo da trilha?');",
-                    })
+                  @if(canManage)
+                    <div class="lesson-actions">
                       <button
-                        type="submit"
+                        type="button"
                         class="iconbtn"
-                        style="width: 30px; height: 30px; color: var(--danger);"
-                        title="Remover aula"
+                        style="width: 30px; height: 30px;"
+                        title="Editar aula"
+                        x-on:click="editing = !editing"
                       >
-                        @svg('lucide:trash-2', { width: 13, height: 13 })
+                        @svg('lucide:pencil', { width: 13, height: 13 })
                       </button>
-                    @end
-                  </div>
-                </div>
-                {{-- Inline Edit Form --}}
-                <div class="lesson-edit-box" x-show="editing" x-cloak>
-                  @form({
-                    route: 'lessons.update',
-                    routeParams: { trackId: track.id, id: lesson.id },
-                  })
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                      <div class="field">
-                        <label class="field__label" for="edit_title_{{ lesson.id }}">
-                          Título da aula
-                        </label>
-                        <input
-                          id="edit_title_{{ lesson.id }}"
-                          name="title"
-                          type="text"
-                          class="field__input"
-                          value="{{ lesson.title }}"
-                          required
-                        />
-                      </div>
-                      <div class="field">
-                        <label class="field__label" for="edit_url_{{ lesson.id }}">
-                          Link do YouTube
-                        </label>
-                        <input
-                          id="edit_url_{{ lesson.id }}"
-                          name="youtubeUrl"
-                          type="url"
-                          class="field__input"
-                          value="{{ lesson.youtubeUrl }}"
-                          required
-                        />
-                      </div>
-                      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                      @form({
+                        route: 'lessons.destroy',
+                        routeParams: { trackId: track.id, id: lesson.id },
+                        onsubmit: "return confirm('Remover este vídeo da trilha?');",
+                      })
                         <button
-                          type="button"
-                          class="btn btn--secondary btn--sm"
-                          x-on:click="editing = false"
+                          type="submit"
+                          class="iconbtn"
+                          style="width: 30px; height: 30px; color: var(--danger);"
+                          title="Remover aula"
                         >
-                          Cancelar
+                          @svg('lucide:trash-2', { width: 13, height: 13 })
                         </button>
-                        <button type="submit" class="btn btn--primary btn--sm">Salvar</button>
-                      </div>
+                      @end
                     </div>
                   @end
                 </div>
+                @if(canManage)
+                  {{-- Inline Edit Form --}}
+                  <div class="lesson-edit-box" x-show="editing" x-cloak>
+                    @form({
+                      route: 'lessons.update',
+                      routeParams: { trackId: track.id, id: lesson.id },
+                    })
+                      <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="field">
+                          <label class="field__label" for="edit_title_{{ lesson.id }}">
+                            Título da aula
+                          </label>
+                          <input
+                            id="edit_title_{{ lesson.id }}"
+                            name="title"
+                            type="text"
+                            class="field__input"
+                            value="{{ lesson.title }}"
+                            required
+                          />
+                        </div>
+                        <div class="field">
+                          <label class="field__label" for="edit_url_{{ lesson.id }}">
+                            Link do YouTube
+                          </label>
+                          <input
+                            id="edit_url_{{ lesson.id }}"
+                            name="youtubeUrl"
+                            type="url"
+                            class="field__input"
+                            value="{{ lesson.youtubeUrl }}"
+                            required
+                          />
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                          <button
+                            type="button"
+                            class="btn btn--secondary btn--sm"
+                            x-on:click="editing = false"
+                          >
+                            Cancelar
+                          </button>
+                          <button type="submit" class="btn btn--primary btn--sm">Salvar</button>
+                        </div>
+                      </div>
+                    @end
+                  </div>
+                @end
               </li>
             @end
           </ul>
@@ -480,71 +492,77 @@
           <div
             style="padding: 24px 20px; text-align: center; color: var(--muted); font-size: 13.5px;"
           >
-            Sua playlist ainda está vazia. Adicione vídeos abaixo para começar a estudar!
+            Esta trilha ainda não possui videoaulas cadastradas.
           </div>
         @end
       </div>
-      {{-- CARD 2: ADICIONAR NOVA VIDEOAULA (Compact Linear Form) --}}
-      <div class="surface-card" style="padding: 20px;">
-        <div
-          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"
-        >
-          <h3
-            class="display-font"
-            style="font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"
+      {{-- CARD 2: ADICIONAR NOVA VIDEOAULA (Only for Owner or Admin) --}}
+      @if(canManage)
+        <div class="surface-card" style="padding: 20px;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"
           >
-            @svg('lucide:youtube', {
-              width: 19,
-              height: 19,
-              style: 'color: var(--danger);',
-            })
-            <span>Adicionar Nova Videoaula</span>
-          </h3>
-          <span class="mono" style="font-size: 10.5px; font-weight: 700; color: var(--muted);">
-            YOUTUBE
-          </span>
-        </div>
-        @form({
-          route: 'lessons.store',
-          routeParams: { trackId: track.id },
-          method: 'POST',
-          'x-data': '{ submitting: false }',
-          'x-on:submit': 'submitting = true',
-        })
-          <div style="display: flex; flex-direction: column; gap: 14px;">
-            @field.root({ name: 'title' })
-              @!field.label({ text: 'Título da aula' })
-              @!input.control({
-                placeholder: 'Ex: Teorema do Confronto e Exemplos',
-                required: true,
+            <h3
+              class="display-font"
+              style="font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"
+            >
+              @svg('lucide:youtube', {
+                width: 19,
+                height: 19,
+                style: 'color: var(--danger);',
               })
-              @!field.error()
-            @end
-            @field.root({ name: 'youtubeUrl' })
-              @!field.label({ text: 'Link do vídeo no YouTube' })
-              <div class="field__input-wrap">
-                <span class="field__icon-left">
-                  @svg('lucide:link', { width: 16, height: 16 })
-                </span>
+              <span>Adicionar Nova Videoaula</span>
+            </h3>
+            <span class="mono" style="font-size: 10.5px; font-weight: 700; color: var(--muted);">
+              YOUTUBE
+            </span>
+          </div>
+          @form({
+            route: 'lessons.store',
+            routeParams: { trackId: track.id },
+            method: 'POST',
+            'x-data': '{ submitting: false }',
+            'x-on:submit': 'submitting = true',
+          })
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              @field.root({ name: 'title' })
+                @!field.label({ text: 'Título da aula' })
                 @!input.control({
-                  type: 'url',
-                  placeholder: 'https://www.youtube.com/watch?v=...',
-                  class: 'field__input--with-left-icon',
+                  placeholder: 'Ex: Teorema do Confronto e Exemplos',
                   required: true,
                 })
-              </div>
-              @!field.error()
-            @end
+                @!field.error()
+              @end
+              @field.root({ name: 'youtubeUrl' })
+                @!field.label({ text: 'Link do vídeo no YouTube' })
+                <div class="field__input-wrap">
+                  <span class="field__icon-left">
+                    @svg('lucide:link', { width: 16, height: 16 })
+                  </span>
+                  @!input.control({
+                    type: 'url',
+                    placeholder: 'https://www.youtube.com/watch?v=...',
+                    class: 'field__input--with-left-icon',
+                    required: true,
+                  })
+                </div>
+                @!field.error()
+              @end
 
-            <button type="submit" class="btn btn--primary btn--block" x-bind:disabled="submitting">
-              @svg('lucide:plus-circle', { width: 17, height: 17 })
-              <span x-text="submitting ? 'Adicionando…' : '+ Adicionar à Trilha'">
-                + Adicionar à Trilha
-              </span>
-            </button>
-          </div>
-        @end
-      </div>
+              <button
+                type="submit"
+                class="btn btn--primary btn--block"
+                x-bind:disabled="submitting"
+              >
+                @svg('lucide:plus-circle', { width: 17, height: 17 })
+                <span x-text="submitting ? 'Adicionando…' : '+ Adicionar à Trilha'">
+                  + Adicionar à Trilha
+                </span>
+              </button>
+            </div>
+          @end
+        </div>
+      @end
     </aside>
   </div>
 @end

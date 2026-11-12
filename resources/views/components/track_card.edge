@@ -62,11 +62,23 @@
           <span style="display: inline-flex; align-items: center; gap: 5px;">
             @svg('lucide:check-check', { width: 15, height: 15 })
             
+            
+            
             100% Concluída (
+
+
             {{ track.completedLessons }}
+            
+            
              de
+
+
             {{ track.totalLessons }}
+            
+            
              aulas)
+
+
 
           </span>
         @else
@@ -103,23 +115,32 @@
     @end
 
     <div class="track-card__actions">
-      @link({
-        route: 'tracks.edit',
-        routeParams: { id: track.id },
-        class: 'iconbtn',
-        title: 'Editar trilha',
-      })
-        @svg('lucide:pencil', { width: 15, height: 15 })
-      @end
-      @form({
-        route: 'tracks.destroy',
-        routeParams: { id: track.id },
-        onsubmit:
-          "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
-      })
-        <button type="submit" class="iconbtn" style="color: var(--danger);" title="Excluir trilha">
-          @svg('lucide:trash-2', { width: 15, height: 15 })
-        </button>
+      @if(track.canManage)
+        @link({
+          route: 'tracks.edit',
+          routeParams: { id: track.id },
+          class: 'iconbtn',
+          title: 'Editar trilha',
+        })
+          @svg('lucide:pencil', { width: 15, height: 15 })
+        @end
+        @form({
+          route: 'tracks.destroy',
+          routeParams: { id: track.id },
+          onsubmit:
+            "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
+        })
+          <button
+            type="submit"
+            class="iconbtn"
+            style="color: var(--danger);"
+            title="Excluir trilha"
+          >
+            @svg('lucide:trash-2', { width: 15, height: 15 })
+          </button>
+        @end
+      @else
+        <span class="mono" style="font-size: 11px; color: var(--muted);">Disciplina Oficial</span>
       @end
     </div>
   </div>

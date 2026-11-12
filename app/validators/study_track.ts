@@ -71,6 +71,7 @@ const youtubeUrlRule = vine.createRule((value: unknown, _options, field: FieldCo
 export const studyTrackValidator = vine.create({
   title: vine.string().trim().minLength(3).maxLength(150),
   description: vine.string().trim().maxLength(1000).nullable().optional(),
+  isPublic: vine.boolean().optional(),
 })
 
 /**
