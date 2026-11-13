@@ -95,7 +95,7 @@ router
   })
   .use(middleware.auth())
 
-// Rotas de BackOffice (BO) exclusivas para administradores
+// Rotas administrativas exclusivas para administradores
 router
   .group(() => {
     router.get('/admin/users', [controllers.Backoffice, 'users']).as('admin.users')

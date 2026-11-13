@@ -9,7 +9,7 @@ import type { HttpContext } from '@adonisjs/core/http'
  */
 export default class BackofficeController {
   /**
-   * List all users registered on the platform with their statistics (BO).
+   * List all users registered on the platform with their statistics.
    */
   async users({ view }: HttpContext) {
     const users = await User.query()
@@ -42,7 +42,7 @@ export default class BackofficeController {
   }
 
   /**
-   * Toggle a user's role between 'student' and 'admin' (BO).
+   * Toggle a user's role between 'student' and 'admin'.
    */
   async toggleRole({ params, auth, response, session }: HttpContext) {
     const currentUser = auth.user!
@@ -65,7 +65,7 @@ export default class BackofficeController {
   }
 
   /**
-   * List all videos (lessons) registered across the platform with filtering (BO).
+   * List all videos (lessons) registered across the platform with filtering.
    */
   async videos({ request, view }: HttpContext) {
     const q = (request.input('q') || '').trim().toLowerCase()
