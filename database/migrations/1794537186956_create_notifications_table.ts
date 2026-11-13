@@ -19,6 +19,8 @@ export default class extends BaseSchema {
       table.boolean('is_read').defaultTo(false).notNullable()
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').nullable()
+
+      table.index(['user_id', 'is_read'])
     })
   }
 

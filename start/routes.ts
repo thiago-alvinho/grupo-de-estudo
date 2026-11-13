@@ -42,7 +42,9 @@ router
     router
       .post('/tracks/:id/transfer-ownership', [controllers.TrackAccess, 'transferOwnership'])
       .as('tracks.transfer_ownership')
-    router.post('/tracks/:id/unlock', [controllers.TrackAccess, 'unlockWithPassword']).as('tracks.unlock')
+    router
+      .post('/tracks/:id/unlock', [controllers.TrackAccess, 'unlockWithPassword'])
+      .as('tracks.unlock')
     router
       .post('/tracks/:id/request-access', [controllers.TrackAccess, 'requestAccess'])
       .as('tracks.request_access')
@@ -101,6 +103,8 @@ router
       .post('/admin/users/:id/toggle-role', [controllers.Backoffice, 'toggleRole'])
       .as('admin.users.toggle_role')
     router.get('/admin/videos', [controllers.Backoffice, 'videos']).as('admin.videos')
-    router.delete('/admin/videos/:id', [controllers.Backoffice, 'destroyVideo']).as('admin.videos.destroy')
+    router
+      .delete('/admin/videos/:id', [controllers.Backoffice, 'destroyVideo'])
+      .as('admin.videos.destroy')
   })
   .use([middleware.auth(), middleware.admin()])

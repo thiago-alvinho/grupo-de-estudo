@@ -42,7 +42,16 @@ export class LessonProgressSchema extends BaseModel {
 }
 
 export class LessonSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'position', 'studyTrackId', 'title', 'updatedAt', 'youtubeUrl', 'youtubeVideoId'] as const
+  static $columns = [
+    'createdAt',
+    'id',
+    'position',
+    'studyTrackId',
+    'title',
+    'updatedAt',
+    'youtubeUrl',
+    'youtubeVideoId',
+  ] as const
   $columns = LessonSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -63,7 +72,16 @@ export class LessonSchema extends BaseModel {
 }
 
 export class NotificationSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'isRead', 'link', 'message', 'title', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'id',
+    'isRead',
+    'link',
+    'message',
+    'title',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = NotificationSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -101,7 +119,16 @@ export class StudyTrackMemberSchema extends BaseModel {
 }
 
 export class StudyTrackSchema extends BaseModel {
-  static $columns = ['accessPassword', 'createdAt', 'description', 'id', 'isPublic', 'title', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'accessPassword',
+    'createdAt',
+    'description',
+    'id',
+    'isPublic',
+    'title',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = StudyTrackSchema.$columns
   @column()
   declare accessPassword: string | null
@@ -122,7 +149,15 @@ export class StudyTrackSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'role', 'updatedAt'] as const
+  static $columns = [
+    'createdAt',
+    'email',
+    'fullName',
+    'id',
+    'password',
+    'role',
+    'updatedAt',
+  ] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -27,7 +27,10 @@ export default class TrackAccessController {
         { studyTrackId: track.id, userId: user.id },
         { status: 'approved' }
       )
-      session.flash('success', `Você entrou na trilha "${track.title}"! Ela foi adicionada em Minhas Trilhas.`)
+      session.flash(
+        'success',
+        `Você entrou na trilha "${track.title}"! Ela foi adicionada em Minhas Trilhas.`
+      )
     }
 
     return response.redirect().toRoute('tracks.show', { id: track.id })
@@ -42,7 +45,10 @@ export default class TrackAccessController {
     const password = String(request.input('password', '')).trim()
 
     if (!track.accessPassword) {
-      session.flash('error', 'Esta trilha privada não possui senha configurada. Solicite acesso ao dono.')
+      session.flash(
+        'error',
+        'Esta trilha privada não possui senha configurada. Solicite acesso ao dono.'
+      )
       return response.redirect().toRoute('tracks.show', { id: track.id })
     }
 
@@ -230,7 +236,10 @@ export default class TrackAccessController {
       unreadCount: Number(unreadResult[0]?.$extras.total || 0),
     })
 
-    session.flash('success', `Solicitação de ${member.user.fullName || member.user.email} recusada.`)
+    session.flash(
+      'success',
+      `Solicitação de ${member.user.fullName || member.user.email} recusada.`
+    )
     return response.redirect().toRoute('tracks.show', { id: track.id })
   }
 
@@ -274,10 +283,7 @@ export default class TrackAccessController {
       return response.redirect().toRoute('tracks.show', { id: track.id })
     }
 
-    await StudyTrackMember.query()
-      .where('studyTrackId', track.id)
-      .where('userId', user.id)
-      .delete()
+    await StudyTrackMember.query().where('studyTrackId', track.id).where('userId', user.id).delete()
 
     session.flash('success', `Você saiu da trilha "${track.title}".`)
     return response.redirect().toRoute('tracks.index')
@@ -297,18 +303,47 @@ export default class TrackAccessController {
     }
 
     const newOwnerId = Number(request.input('newOwnerId'))
+    const newOwnerEmail = String(request.input('newOwnerEmail', '')).trim().toLowerCase()
     const leaveInput = request.input('leaveAfterTransfer')
     const leaveAfterTransfer =
       leaveInput === 'true' || leaveInput === 'on' || leaveInput === true || leaveInput === '1'
 
-    if (!newOwnerId || Number.isNaN(newOwnerId) || newOwnerId === track.userId) {
-      session.flash('error', 'Selecione outro usuário válido para receber a posse da trilha.')
+    let newOwner: User | null = null
+
+    if (newOwnerEmail) {
+      newOwner = await User.query().whereRaw('LOWER(email) = ?', [newOwnerEmail]).first()
+    } else if (newOwnerId && !Number.isNaN(newOwnerId)) {
+      if (!user.isAdmin) {
+        const isApprovedMember = await StudyTrackMember.query()
+          .where('studyTrackId', track.id)
+          .where('userId', newOwnerId)
+          .where('status', 'approved')
+          .first()
+
+        if (!isApprovedMember) {
+          session.flash(
+            'error',
+            'Você só pode selecionar membros aprovados da trilha ou informar o e-mail exato do destinatário.'
+          )
+          return response.redirect().back()
+        }
+      }
+      newOwner = await User.find(newOwnerId)
+    }
+
+    if (!newOwner || newOwner.id === track.userId) {
+      session.flash(
+        'error',
+        'Informe um membro aprovado ou o e-mail válido de outro usuário cadastrado para receber a posse.'
+      )
       return response.redirect().back()
     }
 
-    const newOwner = await User.find(newOwnerId)
-    if (!newOwner) {
-      session.flash('error', 'Usuário selecionado não foi encontrado.')
+    if (track.isPublic && !newOwner.isAdmin) {
+      session.flash(
+        'error',
+        'Trilhas públicas oficiais só podem ser transferidas para outro administrador.'
+      )
       return response.redirect().back()
     }
 
@@ -371,10 +406,7 @@ export default class TrackAccessController {
       return response.redirect().toRoute('tracks.index')
     }
 
-    session.flash(
-      'success',
-      `Posse da trilha "${track.title}" transferida para ${newOwnerName}!`
-    )
+    session.flash('success', `Posse da trilha "${track.title}" transferida para ${newOwnerName}!`)
     return response.redirect().toRoute('tracks.show', { id: track.id })
   }
 }

@@ -12,7 +12,6 @@
           Adicione uma videoaula do YouTube a uma das suas trilhas de estudo.
         </p>
       </div>
-
       @if(tracks.length === 0)
         <div class="alert alert--warning" style="margin-bottom: 20px;">
           @svg('lucide:alert-triangle', { width: 18, height: 18 })
@@ -36,12 +35,16 @@
             <label class="field__label" for="studyTrackId">Trilha de Estudo *</label>
             <select id="studyTrackId" name="studyTrackId" class="field__input" required>
               @each(track in tracks)
-                <option value="{{ track.id }}">{{ track.title }} ({{ track.isPublic ? 'Pública' : 'Privada' }})</option>
+                <option value="{{ track.id }}">
+                  {{ track.title }}
+                  ({{ track.isPublic ? 'Pública' : 'Privada' }})
+                </option>
               @end
             </select>
-            <span class="field__help">Selecione em qual disciplina ou trilha este vídeo será inserido.</span>
+            <span class="field__help">
+              Selecione em qual disciplina ou trilha este vídeo será inserido.
+            </span>
           </div>
-
           {{-- Lesson Title --}}
           <div class="field">
             <label class="field__label" for="title">Título da Videoaula *</label>
@@ -56,7 +59,6 @@
               maxlength="150"
             />
           </div>
-
           {{-- YouTube URL --}}
           <div class="field">
             <label class="field__label" for="youtubeUrl">Link do YouTube *</label>
@@ -77,6 +79,7 @@
             @link({ route: 'videos.index', class: 'btn btn--secondary' })
               <span>Cancelar</span>
             @end
+
             <button type="submit" class="btn btn--primary">
               @svg('lucide:upload-cloud', { width: 16, height: 16 })
               <span>Salvar e Enviar Vídeo</span>

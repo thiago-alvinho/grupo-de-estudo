@@ -121,7 +121,7 @@ export default class LessonsController {
       .where('status', 'approved')
       .first()
     if (!member) {
-      throw new Error('Acesso não autorizado a esta trilha privada.')
+      return null
     }
     return track
   }
@@ -131,7 +131,13 @@ export default class LessonsController {
    */
   async toggleProgress({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
-    const track = await this.findAccessibleTrack(Number(params.trackId), user.id, user.isAdmin)
+    const trackId = Number(params.trackId)
+    const track = await this.findAccessibleTrack(trackId, user.id, user.isAdmin)
+
+    if (!track) {
+      session.flash('error', 'Acesso não autorizado a esta trilha privada.')
+      return response.redirect().toRoute('tracks.show', { id: trackId })
+    }
 
     const lesson = await Lesson.query()
       .where('id', params.id)
@@ -167,7 +173,16 @@ export default class LessonsController {
    */
   async saveNote({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
-    const track = await this.findAccessibleTrack(Number(params.trackId), user.id, user.isAdmin)
+    const trackId = Number(params.trackId)
+    const track = await this.findAccessibleTrack(trackId, user.id, user.isAdmin)
+
+    if (!track) {
+      if (request.accepts(['html', 'json']) === 'json' || request.ajax()) {
+        return response.forbidden({ error: 'Acesso não autorizado a esta trilha privada.' })
+      }
+      session.flash('error', 'Acesso não autorizado a esta trilha privada.')
+      return response.redirect().toRoute('tracks.show', { id: trackId })
+    }
 
     const lesson = await Lesson.query()
       .where('id', params.id)
@@ -176,10 +191,7 @@ export default class LessonsController {
 
     const content = String(request.input('content', '')).slice(0, 10000)
 
-    await LessonNote.updateOrCreate(
-      { userId: user.id, lessonId: lesson.id },
-      { content }
-    )
+    await LessonNote.updateOrCreate({ userId: user.id, lessonId: lesson.id }, { content })
 
     const savedAt = DateTime.now().setZone('America/Sao_Paulo').toFormat('HH:mm')
 
@@ -188,6 +200,9 @@ export default class LessonsController {
     }
 
     session.flash('success', 'Anotação salva com sucesso!')
-    return response.redirect().withQs({ lesson: lesson.id }).toRoute('tracks.show', { id: track.id })
+    return response
+      .redirect()
+      .withQs({ lesson: lesson.id })
+      .toRoute('tracks.show', { id: track.id })
   }
 }

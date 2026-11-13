@@ -10,7 +10,10 @@ export default class AdminMiddleware {
     const user = ctx.auth.user
 
     if (!user || !user.isAdmin) {
-      ctx.session.flash('error', 'Acesso negado. Apenas administradores podem acessar a área de BackOffice.')
+      ctx.session.flash(
+        'error',
+        'Acesso negado. Apenas administradores podem acessar a área de BackOffice.'
+      )
       return ctx.response.redirect().toRoute('tracks.index')
     }
 

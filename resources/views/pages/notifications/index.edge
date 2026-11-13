@@ -9,8 +9,12 @@
             <span>Central de Avisos</span>
           </span>
           @if(unreadCount > 0)
-            <span class="badge" style="background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); font-weight: 600;">
-              {{ unreadCount }} {{ unreadCount === 1 ? 'não lida' : 'não lidas' }}
+            <span
+              class="badge"
+              style="background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); font-weight: 600;"
+            >
+              {{ unreadCount }}
+              {{ unreadCount === 1 ? 'não lida' : 'não lidas' }}
             </span>
           @end
         </div>
@@ -19,7 +23,6 @@
           Acompanhe avisos sobre novas trilhas públicas, boas-vindas e atualizações da plataforma.
         </p>
       </div>
-
       @if(unreadCount > 0)
         @form({ route: 'notifications.mark_all_read', method: 'POST' })
           <button type="submit" class="btn btn--secondary btn--sm">
@@ -29,7 +32,6 @@
         @end
       @end
     </div>
-
     {{-- Notifications List --}}
     @if(notifications.length > 0)
       <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -50,6 +52,7 @@
                   @if(!notif.isRead)
                     <span class="notif-dot notif-dot--inline" title="Não lida"></span>
                   @end
+
                   <h2 style="font-size: 15px; font-weight: 600; color: var(--ink); margin: 0;">
                     {{ notif.title }}
                   </h2>
@@ -66,8 +69,15 @@
 
             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
               @if(!notif.isRead || notif.link)
-                @form({ route: 'notifications.mark_read', routeParams: { id: notif.id }, method: 'POST' })
-                  <button type="submit" class="btn {{ notif.isRead ? 'btn--secondary' : 'btn--primary' }} btn--sm">
+                @form({
+                  route: 'notifications.mark_read',
+                  routeParams: { id: notif.id },
+                  method: 'POST',
+                })
+                  <button
+                    type="submit"
+                    class="btn {{ notif.isRead ? 'btn--secondary' : 'btn--primary' }} btn--sm"
+                  >
                     @if(notif.link)
                       @svg('lucide:arrow-up-right', { width: 14, height: 14 })
                       <span>Abrir</span>
@@ -78,8 +88,11 @@
                   </button>
                 @end
               @end
-
-              @form({ route: 'notifications.destroy', routeParams: { id: notif.id }, method: 'DELETE' })
+              @form({
+                route: 'notifications.destroy',
+                routeParams: { id: notif.id },
+                method: 'DELETE',
+              })
                 <button
                   type="submit"
                   class="btn btn--secondary btn--sm"

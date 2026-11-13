@@ -81,19 +81,25 @@ export default class BackofficeController {
       query.where('studyTrackId', trackId)
     }
 
-    const allLessons = await query
-    const tracks = await StudyTrack.query().orderBy('title', 'asc')
+    if (q) {
+      const likePattern = `%${q}%`
+      query.where((subQuery) => {
+        subQuery
+          .whereRaw('LOWER(title) LIKE ?', [likePattern])
+          .orWhereHas('studyTrack', (trackQuery) => {
+            trackQuery.whereRaw('LOWER(title) LIKE ?', [likePattern])
+          })
+      })
+    }
 
-    const filteredLessons = q
-      ? allLessons.filter(
-          (l) =>
-            l.title.toLowerCase().includes(q) ||
-            (l.studyTrack && l.studyTrack.title.toLowerCase().includes(q))
-        )
-      : allLessons
+    const [filteredLessons, totalVideosResult, tracks] = await Promise.all([
+      query,
+      Lesson.query().count('* as total'),
+      StudyTrack.query().orderBy('title', 'asc'),
+    ])
 
     const stats = {
-      totalVideos: allLessons.length,
+      totalVideos: Number(totalVideosResult[0]?.$extras.total || 0),
       totalTracks: tracks.length,
     }
 

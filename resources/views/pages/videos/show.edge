@@ -1,24 +1,32 @@
 @layouts.app({ title: lesson.title })
   <div style="display: flex; flex-direction: column; gap: 20px;">
     {{-- Back breadcrumb --}}
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <div
+      style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;"
+    >
       @link({ route: 'videos.index', class: 'back-link' })
         @svg('lucide:arrow-left', { width: 15, height: 15 })
         <span>Voltar para Catálogo de Vídeos</span>
       @end
-
-      @link({ route: 'tracks.show', routeParams: { id: track.id }, routeOptions: { qs: { lesson: lesson.id } }, class: 'btn btn--secondary btn--sm' })
+      @link({
+        route: 'tracks.show',
+        routeParams: { id: track.id },
+        routeOptions: { qs: { lesson: lesson.id } },
+        class: 'btn btn--secondary btn--sm',
+      })
         @svg('lucide:compass', { width: 14, height: 14 })
         <span>Abrir na Trilha Completa (com anotações)</span>
       @end
     </div>
-
     {{-- Main 2-column Layout --}}
     <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
       {{-- Video Player Column --}}
       <div style="display: flex; flex-direction: column; gap: 16px;">
         {{-- 16:9 Video Embed Card --}}
-        <div class="player-card" style="border-radius: var(--r-lg); overflow: hidden; background: #000; box-shadow: var(--shadow-md);">
+        <div
+          class="player-card"
+          style="border-radius: var(--r-lg); overflow: hidden; background: #000; box-shadow: var(--shadow-md);"
+        >
           <div style="position: relative; padding-bottom: 56.25%; height: 0;">
             <iframe
               src="https://www.youtube-nocookie.com/embed/{{ lesson.youtubeVideoId }}?rel=0"
@@ -30,10 +38,11 @@
             ></iframe>
           </div>
         </div>
-
         {{-- Video Metadata Header --}}
         <div class="panel" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
-          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+          <div
+            style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;"
+          >
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="badge badge--primary">Videoaula</span>
               <span class="badge">
@@ -57,10 +66,16 @@
                 @svg('lucide:external-link', { width: 14, height: 14 })
                 <span>Assistir no YouTube</span>
               </a>
-
-              @form({ route: 'lessons.toggle_progress', routeParams: { trackId: track.id, id: lesson.id }, method: 'POST' })
+              @form({
+                route: 'lessons.toggle_progress',
+                routeParams: { trackId: track.id, id: lesson.id },
+                method: 'POST',
+              })
                 <input type="hidden" name="activeLessonId" value="{{ lesson.id }}" />
-                <button type="submit" class="btn {{ isCompleted ? 'btn--success' : 'btn--primary' }} btn--sm">
+                <button
+                  type="submit"
+                  class="btn {{ isCompleted ? 'btn--success' : 'btn--primary' }} btn--sm"
+                >
                   @if(isCompleted)
                     @svg('lucide:check-circle-2', { width: 15, height: 15 })
                     <span>Concluída</span>
@@ -73,18 +88,25 @@
             </div>
           </div>
 
-          <h1 class="display-font" style="font-size: 22px; font-weight: 700; margin: 0; color: var(--ink);">
+          <h1
+            class="display-font"
+            style="font-size: 22px; font-weight: 700; margin: 0; color: var(--ink);"
+          >
             {{ lesson.title }}
           </h1>
 
-          <div style="display: flex; align-items: center; gap: 16px; font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px;">
+          <div
+            style="display: flex; align-items: center; gap: 16px; font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px;"
+          >
             <span>Trilha: <strong>{{ track.title }}</strong></span>
             <span>•</span>
-            <span>Instrutor: <strong>{{ track.user?.fullName || track.user?.email || 'Instrutor' }}</strong></span>
+            <span>
+              Instrutor:
+              <strong>{{ track.user?.fullName || track.user?.email || 'Instrutor' }}</strong>
+            </span>
           </div>
         </div>
       </div>
-
       {{-- Sidebar: Other lessons from this track --}}
       <aside style="display: flex; flex-direction: column; gap: 16px;">
         <div class="panel" style="padding: 18px;">
@@ -92,20 +114,31 @@
             Aulas da mesma trilha
           </h3>
 
-          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto;">
+          <div
+            style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto;"
+          >
             @each((item, index) in otherLessons)
               <a
                 href="{{ route('videos.show', { id: item.id }) }}"
                 style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--r); text-decoration: none; border: 1px solid {{ item.id === lesson.id ? 'var(--primary)' : 'var(--line)' }}; background: {{ item.id === lesson.id ? 'var(--surface-tint)' : 'transparent' }};"
               >
-                <span class="mono" style="font-size: 12px; font-weight: 600; color: {{ item.id === lesson.id ? 'var(--primary)' : 'var(--muted)' }};">
+                <span
+                  class="mono"
+                  style="font-size: 12px; font-weight: 600; color: {{ item.id === lesson.id ? 'var(--primary)' : 'var(--muted)' }};"
+                >
                   #{{ index + 1 }}
                 </span>
-                <span style="font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <span
+                  style="font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                >
                   {{ item.title }}
                 </span>
                 @if(item.id === lesson.id)
-                  @svg('lucide:play', { width: 14, height: 14, style: 'color: var(--primary);' })
+                  @svg('lucide:play', {
+                    width: 14,
+                    height: 14,
+                    style: 'color: var(--primary);',
+                  })
                 @end
               </a>
             @end

@@ -47,9 +47,7 @@ test.group('Lesson Notes Persistence', (group) => {
       { content: 'Revisar teorema de Fubini e coordenadas polares.' }
     )
 
-    const allNotes = await LessonNote.query()
-      .where('userId', user.id)
-      .where('lessonId', lesson.id)
+    const allNotes = await LessonNote.query().where('userId', user.id).where('lessonId', lesson.id)
     assert.lengthOf(allNotes, 1)
     assert.equal(allNotes[0].content, 'Revisar teorema de Fubini e coordenadas polares.')
   })

@@ -136,16 +136,15 @@ export default class StudyTracksController {
 
   /**
    * Store a newly created study track in the database.
-   * Both students and administrators can create public or private tracks.
+   * Only administrators can create public tracks; students always create private tracks.
    */
   async store({ request, response, auth, session }: HttpContext) {
     const user = auth.user!
     const { title, description, isPublic, accessPassword } =
       await request.validateUsing(studyTrackValidator)
 
-    const trackIsPublic = Boolean(isPublic)
-    const hashedPassword =
-      !trackIsPublic && accessPassword ? await hash.make(accessPassword) : null
+    const trackIsPublic = user.isAdmin ? Boolean(isPublic) : false
+    const hashedPassword = !trackIsPublic && accessPassword ? await hash.make(accessPassword) : null
 
     const track = await StudyTrack.create({
       userId: user.id,
@@ -268,12 +267,20 @@ export default class StudyTracksController {
       approvedMembers = allMembers.filter((m) => m.status === 'approved')
     }
 
-    const transferCandidates = canManage
-      ? await User.query()
-          .whereNot('id', track.userId)
-          .orderBy('fullName', 'asc')
-          .orderBy('email', 'asc')
-      : []
+    let transferCandidates: User[] = []
+    if (canManage) {
+      if (user.isAdmin) {
+        const candidateQuery = User.query().whereNot('id', track.userId)
+        if (track.isPublic) {
+          candidateQuery.where('role', 'admin')
+        }
+        transferCandidates = await candidateQuery.orderBy('fullName', 'asc').orderBy('email', 'asc')
+      } else {
+        transferCandidates = approvedMembers
+          .map((m) => m.user)
+          .filter((u) => Boolean(u && u.id !== track.userId))
+      }
+    }
 
     return view.render('pages/tracks/show', {
       track,
@@ -307,10 +314,24 @@ export default class StudyTracksController {
       .preload('user')
       .firstOrFail()
 
-    const transferCandidates = await User.query()
-      .whereNot('id', track.userId)
-      .orderBy('fullName', 'asc')
-      .orderBy('email', 'asc')
+    let transferCandidates: User[] = []
+    if (user.isAdmin) {
+      const candidateQuery = User.query().whereNot('id', track.userId)
+      if (track.isPublic) {
+        candidateQuery.where('role', 'admin')
+      }
+      transferCandidates = await candidateQuery.orderBy('fullName', 'asc').orderBy('email', 'asc')
+    } else {
+      const approvedMembers = await StudyTrackMember.query()
+        .where('studyTrackId', track.id)
+        .where('status', 'approved')
+        .preload('user')
+        .orderBy('createdAt', 'desc')
+
+      transferCandidates = approvedMembers
+        .map((m) => m.user)
+        .filter((u) => Boolean(u && u.id !== track.userId))
+    }
 
     return view.render('pages/tracks/edit', {
       track,
@@ -338,7 +359,7 @@ export default class StudyTracksController {
 
     track.title = title
     track.description = description || null
-    if (isPublic !== undefined) {
+    if (user.isAdmin && isPublic !== undefined) {
       track.isPublic = Boolean(isPublic)
     }
 

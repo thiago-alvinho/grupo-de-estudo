@@ -58,6 +58,17 @@ export default class VideosCatalogController {
       query.where('studyTrackId', trackId)
     }
 
+    if (q) {
+      const likePattern = `%${q}%`
+      query.where((subQuery) => {
+        subQuery
+          .whereRaw('LOWER(title) LIKE ?', [likePattern])
+          .orWhereHas('studyTrack', (trackQuery) => {
+            trackQuery.whereRaw('LOWER(title) LIKE ?', [likePattern])
+          })
+      })
+    }
+
     const lessons = await query
 
     // Check completion progress for this user
@@ -68,15 +79,7 @@ export default class VideosCatalogController {
         : []
     const completedSet = new Set(progresses.map((p) => p.lessonId))
 
-    const filtered = q
-      ? lessons.filter(
-          (l) =>
-            l.title.toLowerCase().includes(q) ||
-            (l.studyTrack && l.studyTrack.title.toLowerCase().includes(q))
-        )
-      : lessons
-
-    const formattedVideos = filtered.map((lesson) => ({
+    const formattedVideos = lessons.map((lesson) => ({
       id: lesson.id,
       title: lesson.title,
       youtubeUrl: lesson.youtubeUrl,
@@ -84,7 +87,8 @@ export default class VideosCatalogController {
       studyTrackId: lesson.studyTrackId,
       trackTitle: lesson.studyTrack?.title || 'Trilha',
       trackIsPublic: lesson.studyTrack?.isPublic || false,
-      authorName: lesson.studyTrack?.user?.fullName || lesson.studyTrack?.user?.email || 'Instrutor',
+      authorName:
+        lesson.studyTrack?.user?.fullName || lesson.studyTrack?.user?.email || 'Instrutor',
       isCompleted: completedSet.has(lesson.id),
       createdAt: lesson.createdAt,
     }))

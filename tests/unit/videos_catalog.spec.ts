@@ -37,13 +37,31 @@ test.group('Video Search & Catalog', (group) => {
       position: 2,
     })
 
-    // Search for "Newton"
-    const results = await Lesson.query()
+    // Search for "Newton" (lesson title) or "clássica" (track title) via SQL
+    const byLessonTitle = await Lesson.query()
       .where('studyTrackId', track.id)
-      .whereLike('title', '%Newton%')
+      .where((subQuery) => {
+        subQuery
+          .whereRaw('LOWER(title) LIKE ?', ['%newton%'])
+          .orWhereHas('studyTrack', (trackQuery) => {
+            trackQuery.whereRaw('LOWER(title) LIKE ?', ['%newton%'])
+          })
+      })
 
-    assert.lengthOf(results, 1)
-    assert.equal(results[0].title, 'Leis de Newton')
+    assert.lengthOf(byLessonTitle, 1)
+    assert.equal(byLessonTitle[0].title, 'Leis de Newton')
+
+    const byTrackTitle = await Lesson.query()
+      .where('studyTrackId', track.id)
+      .where((subQuery) => {
+        subQuery
+          .whereRaw('LOWER(title) LIKE ?', ['%clássica%'])
+          .orWhereHas('studyTrack', (trackQuery) => {
+            trackQuery.whereRaw('LOWER(title) LIKE ?', ['%clássica%'])
+          })
+      })
+
+    assert.lengthOf(byTrackTitle, 2)
   })
 
   test('public videos are visible to other students while private remain secluded', async ({

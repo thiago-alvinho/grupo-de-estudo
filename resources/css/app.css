@@ -1944,7 +1944,9 @@ select {
   background: transparent;
   cursor: pointer;
   border-radius: 999px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .user-avatar-trigger:hover {
@@ -2036,7 +2038,9 @@ select {
   text-decoration: none;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 .user-dropdown__item:hover {

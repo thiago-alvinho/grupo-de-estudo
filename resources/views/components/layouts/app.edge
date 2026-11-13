@@ -44,44 +44,57 @@
     </nav>
     @!footer()
     @include('partials/flash_alerts')
-
     @if(auth?.user)
       <div
         x-data="{
           toast: null,
           timer: null,
           init() {
-            const source = new EventSource('{{ route('realtime.events') }}')
-            source.onmessage = (event) => {
-              try {
-                const data = JSON.parse(event.data)
-                if (typeof data.unreadCount === 'number') {
-                  window.dispatchEvent(new CustomEvent('gde:unread-updated', { detail: data.unreadCount }))
-                }
-                if (data.type === 'access_request') {
-                  window.dispatchEvent(new CustomEvent('gde:access-request', { detail: data }))
-                }
-                this.toast = data
-                clearTimeout(this.timer)
-                this.timer = setTimeout(() => { this.toast = null }, 7000)
-              } catch {}
-            }
+          const source = new EventSource('{{ route('realtime.events') }}')
+          source.onmessage = (event) => {
+          try {
+          const data = JSON.parse(event.data)
+          if (typeof data.unreadCount === 'number') {
+          window.dispatchEvent(new CustomEvent('gde:unread-updated', { detail: data.unreadCount }))
           }
-        }"
+          if (data.type === 'access_request') {
+          window.dispatchEvent(new CustomEvent('gde:access-request', { detail: data }))
+          }
+          this.toast = data
+          clearTimeout(this.timer)
+          this.timer = setTimeout(() => { this.toast = null }, 7000)
+          } catch {}
+          }
+          }
+          }"
         x-show="toast"
         x-cloak
         x-transition.opacity.duration.200ms
         style="position: fixed; bottom: 24px; right: 24px; z-index: 90; max-width: 360px; width: calc(100vw - 32px); background: var(--card); border: 1px solid var(--primary); border-left: 4px solid var(--primary); border-radius: var(--r-lg); box-shadow: var(--shadow-md); padding: 14px 16px;"
       >
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+        <div
+          style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;"
+        >
           <div style="display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: var(--ink);">
-              @svg('lucide:bell-ring', { width: 15, height: 15, style: 'color: var(--primary);' })
+            <div
+              style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: var(--ink);"
+            >
+              @svg('lucide:bell-ring', {
+                width: 15,
+                height: 15,
+                style: 'color: var(--primary);',
+              })
               <span x-text="toast?.title"></span>
             </div>
-            <p style="font-size: 12.5px; color: var(--ink-2); margin: 0; line-height: 1.45;" x-text="toast?.message"></p>
+            <p
+              style="font-size: 12.5px; color: var(--ink-2); margin: 0; line-height: 1.45;"
+              x-text="toast?.message"
+            ></p>
             <template x-if="toast?.link">
-              <a :href="toast.link" style="font-size: 12px; font-weight: 600; color: var(--primary); margin-top: 4px; text-decoration: none;">
+              <a
+                :href="toast.link"
+                style="font-size: 12px; font-weight: 600; color: var(--primary); margin-top: 4px; text-decoration: none;"
+              >
                 Ver agora →
               </a>
             </template>
