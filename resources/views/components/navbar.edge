@@ -1,6 +1,7 @@
 @let(breadcrumb = $props.get('breadcrumb'))
 @let(nav = [
   { label: 'Minhas Trilhas', route: 'tracks.index', icon: 'lucide:compass', exact: true },
+  { label: 'Todas as Trilhas', route: 'tracks.explore', icon: 'lucide:globe', exact: true },
   { label: 'Nova Trilha', route: 'tracks.create', icon: 'lucide:plus-circle', exact: true },
 ])
 
@@ -29,6 +30,20 @@
           <span>{{ item.label }}</span>
         @end
       @end
+
+      @if(auth?.user?.isAdmin)
+        <div style="display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--line);">
+          <span class="badge badge--primary" style="font-size: 10px; padding: 2px 6px;">BO</span>
+          @navLink({ route: 'admin.users', class: 'topbar__nav-link', style: 'padding: 4px 8px; font-size: 13px;' })
+            @svg('lucide:users', { width: 14, height: 14 })
+            <span>Usuários</span>
+          @end
+          @navLink({ route: 'admin.videos', class: 'topbar__nav-link', style: 'padding: 4px 8px; font-size: 13px;' })
+            @svg('lucide:video', { width: 14, height: 14 })
+            <span>Vídeos</span>
+          @end
+        </div>
+      @end
     </nav>
 
     <div class="topbar__right">
@@ -38,21 +53,81 @@
       @end
       @!themeToggle()
       @if(auth?.user)
-        <div class="user-pill">
-          <span class="user-pill__avatar" title="{{ auth.user.email }}">
-            {{ auth.user.initials }}
-          </span>
+        <div
+          class="user-pill"
+          x-data="{
+            userMenuOpen: false,
+            unreadCount: {{ unreadNotificationsCount || 0 }}
+          }"
+          x-on:keydown.escape.window="userMenuOpen = false"
+          x-on:gde:unread-updated.window="unreadCount = $event.detail"
+        >
+          <div class="user-menu" x-on:click.outside="userMenuOpen = false">
+            <button
+              type="button"
+              class="user-avatar-trigger"
+              x-on:click="userMenuOpen = !userMenuOpen"
+              x-bind:aria-expanded="userMenuOpen"
+              aria-haspopup="true"
+              title="Menu da conta e notificações"
+            >
+              <span class="user-pill__avatar">
+                {{ auth.user.initials }}
+              </span>
+              <span
+                class="notif-dot notif-dot--avatar"
+                x-show="unreadCount > 0"
+                x-cloak
+                aria-label="Você tem notificações não lidas"
+              ></span>
+            </button>
+
+            <div
+              class="user-dropdown"
+              x-show="userMenuOpen"
+              x-cloak
+              x-transition.opacity.duration.120ms
+              role="menu"
+            >
+              <div class="user-dropdown__header">
+                <div class="user-dropdown__name">{{ auth.user.fullName || auth.user.email }}</div>
+                <div class="user-dropdown__email">{{ auth.user.email }}</div>
+              </div>
+
+              @link({ route: 'notifications.index', class: 'user-dropdown__item', role: 'menuitem' })
+                @svg('lucide:bell', { width: 15, height: 15 })
+                <span class="user-dropdown__label-wrap">
+                  <span>Notificações</span>
+                  <span
+                    class="notif-dot notif-dot--inline"
+                    x-show="unreadCount > 0"
+                    x-cloak
+                    aria-label="Notificações não lidas"
+                  ></span>
+                </span>
+              @end
+
+              @link({ route: 'tracks.index', class: 'user-dropdown__item', role: 'menuitem' })
+                @svg('lucide:compass', { width: 15, height: 15 })
+                <span>Minhas Trilhas</span>
+              @end
+
+              <div class="user-dropdown__divider"></div>
+
+              @form({ route: 'session.destroy', method: 'POST', style: 'width: 100%;' })
+                <button type="submit" class="user-dropdown__item user-dropdown__item--danger" role="menuitem">
+                  @svg('lucide:log-out', { width: 15, height: 15 })
+                  <span>Sair da conta</span>
+                </button>
+              @end
+            </div>
+          </div>
+
           <span class="user-pill__name">{{ auth.user.fullName || auth.user.email }}</span>
           @if(auth.user.isAdmin)
             <span class="badge badge--primary" style="font-size: 10px; padding: 2px 7px;">
               Admin
             </span>
-          @end
-          @form({ route: 'session.destroy', method: 'POST' })
-            <button type="submit" class="btn btn--secondary btn--sm" title="Sair da conta">
-              @svg('lucide:log-out', { width: 14, height: 14 })
-              <span>Sair</span>
-            </button>
           @end
         </div>
       @end

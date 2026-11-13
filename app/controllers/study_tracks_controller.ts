@@ -1,6 +1,11 @@
 import StudyTrack from '#models/study_track'
+import StudyTrackMember from '#models/study_track_member'
 import LessonProgress from '#models/lesson_progress'
+import LessonNote from '#models/lesson_note'
+import Notification from '#models/notification'
+import User from '#models/user'
 import { studyTrackValidator } from '#validators/study_track'
+import hash from '@adonisjs/core/services/hash'
 import type { HttpContext } from '@adonisjs/core/http'
 
 /**
@@ -10,21 +15,28 @@ import type { HttpContext } from '@adonisjs/core/http'
  */
 export default class StudyTracksController {
   /**
-   * List study tracks accessible to the authenticated user (their own tracks
-   * plus official public tracks) with individual progress stats.
+   * List ONLY the study tracks that the currently logged-in user created
+   * or explicitly joined/unlocked (status === 'approved').
    */
   async index({ auth, view }: HttpContext) {
     const user = auth.user!
 
+    const approvedMemberships = await StudyTrackMember.query()
+      .where('userId', user.id)
+      .where('status', 'approved')
+    const approvedTrackIds = approvedMemberships.map((m) => m.studyTrackId)
+
     const tracks = await StudyTrack.query()
       .where((query) => {
-        query.where('userId', user.id).orWhere('isPublic', true)
+        query.where('userId', user.id)
+        if (approvedTrackIds.length > 0) {
+          query.orWhereIn('id', approvedTrackIds)
+        }
       })
       .preload('user')
       .preload('lessons', (query) => {
         query.orderBy('position', 'asc').orderBy('id', 'asc')
       })
-      .orderBy('isPublic', 'desc')
       .orderBy('createdAt', 'desc')
 
     const allLessonIds = tracks.flatMap((track) => track.lessons.map((lesson) => lesson.id))
@@ -49,6 +61,9 @@ export default class StudyTracksController {
         description: track.description,
         isPublic: track.isPublic,
         canManage,
+        isLocked: false,
+        memberStatus: track.userId === user.id ? 'owner' : 'approved',
+        hasPassword: Boolean(track.accessPassword),
         authorName: track.user ? track.user.fullName || track.user.email : null,
         createdAt: track.createdAt,
         totalLessons,
@@ -70,6 +85,49 @@ export default class StudyTracksController {
   }
 
   /**
+   * Explore all study tracks created on the platform (public and private),
+   * allowing the user to join public tracks or unlock/request private ones.
+   */
+  async explore({ auth, view }: HttpContext) {
+    const user = auth.user!
+
+    const tracks = await StudyTrack.query()
+      .preload('user')
+      .preload('lessons')
+      .orderBy('createdAt', 'desc')
+
+    const memberships = await StudyTrackMember.query().where('userId', user.id)
+    const membershipMap = new Map(memberships.map((m) => [m.studyTrackId, m.status]))
+
+    const allTracks = tracks.map((track) => {
+      const isOwner = track.userId === user.id
+      const memberStatus = membershipMap.get(track.id) || null
+      const hasJoined = isOwner || memberStatus === 'approved'
+      const isLocked = !track.isPublic && !isOwner && memberStatus !== 'approved' && !user.isAdmin
+
+      return {
+        id: track.id,
+        userId: track.userId,
+        title: track.title,
+        description: track.description,
+        isPublic: track.isPublic,
+        isOwner,
+        hasJoined,
+        isLocked,
+        memberStatus,
+        hasPassword: Boolean(track.accessPassword),
+        authorName: track.user ? track.user.fullName || track.user.email : 'Comunidade',
+        createdAt: track.createdAt,
+        totalLessons: track.lessons.length,
+      }
+    })
+
+    return view.render('pages/tracks/explore', {
+      tracks: allTracks,
+    })
+  }
+
+  /**
    * Show the form for creating a new study track.
    */
   async create({ view }: HttpContext) {
@@ -78,47 +136,85 @@ export default class StudyTracksController {
 
   /**
    * Store a newly created study track in the database.
-   * Only administrators can create public tracks (isPublic = true).
+   * Both students and administrators can create public or private tracks.
    */
   async store({ request, response, auth, session }: HttpContext) {
     const user = auth.user!
-    const { title, description, isPublic } = await request.validateUsing(studyTrackValidator)
+    const { title, description, isPublic, accessPassword } =
+      await request.validateUsing(studyTrackValidator)
+
+    const trackIsPublic = Boolean(isPublic)
+    const hashedPassword =
+      !trackIsPublic && accessPassword ? await hash.make(accessPassword) : null
 
     const track = await StudyTrack.create({
       userId: user.id,
       title,
       description: description || null,
-      isPublic: user.isAdmin ? Boolean(isPublic) : false,
+      isPublic: trackIsPublic,
+      accessPassword: hashedPassword,
     })
+
+    if (track.isPublic) {
+      const otherUsers = await User.query().whereNot('id', user.id).select('id')
+      if (otherUsers.length > 0) {
+        await Notification.createMany(
+          otherUsers.map((recipient) => ({
+            userId: recipient.id,
+            title: 'Nova trilha pública disponível!',
+            message: `${user.fullName || user.email} publicou a trilha "${track.title}".`,
+            link: `/tracks/${track.id}`,
+            isRead: false,
+          }))
+        )
+      }
+    }
 
     session.flash(
       'success',
       track.isPublic
-        ? 'Disciplina pública criada com sucesso! Adicione as videoaulas abaixo.'
+        ? 'Trilha pública criada com sucesso! Todos os estudantes da plataforma poderão estudar por ela.'
         : 'Trilha privada criada com sucesso! Adicione os vídeos do YouTube abaixo.'
     )
     return response.redirect().withQs(false).toRoute('tracks.show', { id: track.id })
   }
 
   /**
-   * Display a single study track (private to owner or public), its YouTube player,
-   * lesson playlist, and the authenticated user's individual progress.
+   * Display a single study track, its unlock/request screen if private and
+   * user is not authorized yet, or its YouTube player and access management.
    */
   async show({ params, request, view, auth }: HttpContext) {
     const user = auth.user!
 
     const track = await StudyTrack.query()
       .where('id', params.id)
-      .where((query) => {
-        query.where('userId', user.id).orWhere('isPublic', true)
-      })
       .preload('user')
       .preload('lessons', (query) => {
         query.orderBy('position', 'asc').orderBy('id', 'asc')
       })
       .firstOrFail()
 
-    const canManage = track.userId === user.id || user.isAdmin
+    const isOwner = track.userId === user.id
+    const canManage = isOwner || user.isAdmin
+
+    const membership = !isOwner
+      ? await StudyTrackMember.query()
+          .where('studyTrackId', track.id)
+          .where('userId', user.id)
+          .first()
+      : null
+
+    const isMember = membership?.status === 'approved'
+    const hasAccess = track.isPublic || canManage || isMember
+
+    if (!hasAccess) {
+      return view.render('pages/tracks/unlock', {
+        track,
+        membership,
+        hasPassword: Boolean(track.accessPassword),
+        lessonsCount: track.lessons.length,
+      })
+    }
 
     const lessonIds = track.lessons.map((l) => l.id)
     const progresses =
@@ -150,14 +246,49 @@ export default class StudyTracksController {
     const progressPercent =
       totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
 
+    let activeNote = ''
+    if (activeLesson) {
+      const noteRecord = await LessonNote.query()
+        .where('userId', user.id)
+        .where('lessonId', activeLesson.id)
+        .first()
+      activeNote = noteRecord?.content || ''
+    }
+
+    let pendingMembers: StudyTrackMember[] = []
+    let approvedMembers: StudyTrackMember[] = []
+
+    if (canManage && !track.isPublic) {
+      const allMembers = await StudyTrackMember.query()
+        .where('studyTrackId', track.id)
+        .preload('user')
+        .orderBy('createdAt', 'desc')
+
+      pendingMembers = allMembers.filter((m) => m.status === 'pending')
+      approvedMembers = allMembers.filter((m) => m.status === 'approved')
+    }
+
+    const transferCandidates = canManage
+      ? await User.query()
+          .whereNot('id', track.userId)
+          .orderBy('fullName', 'asc')
+          .orderBy('email', 'asc')
+      : []
+
     return view.render('pages/tracks/show', {
       track,
+      isOwner,
+      isMember,
       canManage,
       lessons,
       activeLesson,
+      activeNote,
       totalLessons,
       completedLessons,
       progressPercent,
+      pendingMembers,
+      approvedMembers,
+      transferCandidates,
     })
   }
 
@@ -173,13 +304,23 @@ export default class StudyTracksController {
           query.where('userId', user.id)
         }
       })
+      .preload('user')
       .firstOrFail()
 
-    return view.render('pages/tracks/edit', { track })
+    const transferCandidates = await User.query()
+      .whereNot('id', track.userId)
+      .orderBy('fullName', 'asc')
+      .orderBy('email', 'asc')
+
+    return view.render('pages/tracks/edit', {
+      track,
+      isOwner: track.userId === user.id,
+      transferCandidates,
+    })
   }
 
   /**
-   * Update the study track title, description, and (for admins) visibility.
+   * Update the study track title, description, and visibility.
    */
   async update({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
@@ -192,13 +333,21 @@ export default class StudyTracksController {
       })
       .firstOrFail()
 
-    const { title, description, isPublic } = await request.validateUsing(studyTrackValidator)
+    const { title, description, isPublic, accessPassword, removePassword } =
+      await request.validateUsing(studyTrackValidator)
 
     track.title = title
     track.description = description || null
-    if (user.isAdmin && isPublic !== undefined) {
+    if (isPublic !== undefined) {
       track.isPublic = Boolean(isPublic)
     }
+
+    if (track.isPublic || removePassword) {
+      track.accessPassword = null
+    } else if (accessPassword) {
+      track.accessPassword = await hash.make(accessPassword)
+    }
+
     await track.save()
 
     session.flash('success', 'Trilha atualizada com sucesso!')

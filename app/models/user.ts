@@ -6,6 +6,7 @@ import { beforeCreate, hasMany } from '@adonisjs/lucid/orm'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import StudyTrack from '#models/study_track'
 import LessonProgress from '#models/lesson_progress'
+import Notification from '#models/notification'
 
 /**
  * User model represents a user in the application.
@@ -25,6 +26,9 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @hasMany(() => LessonProgress)
   declare lessonProgresses: HasMany<typeof LessonProgress>
+
+  @hasMany(() => Notification)
+  declare notifications: HasMany<typeof Notification>
 
   /**
    * Returns true when the user has the administrative role.

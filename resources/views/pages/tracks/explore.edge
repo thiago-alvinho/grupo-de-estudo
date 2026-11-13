@@ -1,0 +1,202 @@
+@layouts.app({ title: 'Todas as Trilhas' })
+  <div
+    x-data="{
+      search: '',
+      visibilityFilter: 'all',
+      matchesTrack(ds) {
+        const q = this.search.trim().toLowerCase()
+        if (q && !ds.title.includes(q) && !ds.desc.includes(q) && !ds.author.includes(q)) return false
+        if (this.visibilityFilter !== 'all' && ds.visibility !== this.visibilityFilter) return false
+        return true
+      }
+    }"
+    style="display: flex; flex-direction: column; gap: 24px;"
+  >
+    {{-- Header --}}
+    <div class="hero-greeting">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span class="badge badge--primary">
+            @svg('lucide:globe', { width: 13, height: 13 })
+            <span>Comunidade</span>
+          </span>
+          <span class="badge">
+            {{ tracks.length }} {{ tracks.length === 1 ? 'trilha criada' : 'trilhas criadas' }}
+          </span>
+        </div>
+        <h1 class="hero-greeting__title">Todas as Trilhas</h1>
+        <p class="hero-greeting__sub">
+          Explore todas as trilhas criadas na plataforma neste momento. Entre em trilhas públicas ou solicite acesso às trilhas privadas.
+        </p>
+      </div>
+
+      @link({ route: 'tracks.create', class: 'btn btn--primary' })
+        @svg('lucide:plus', { width: 17, height: 17 })
+        <span>Criar Nova Trilha</span>
+      @end
+    </div>
+
+    {{-- Search & Filter Bar --}}
+    <div class="filter-bar">
+      <div class="filter-bar__search">
+        <span class="filter-bar__search-icon">
+          @svg('lucide:search', { width: 17, height: 17 })
+        </span>
+        <input
+          type="text"
+          class="filter-bar__input"
+          placeholder="Buscar por nome da trilha, descrição ou autor..."
+          x-model="search"
+        />
+      </div>
+
+      <div class="filter-pills" role="group" aria-label="Filtrar por visibilidade">
+        <button
+          type="button"
+          class="filter-pill"
+          x-bind:class="visibilityFilter === 'all' ? 'filter-pill--active' : ''"
+          x-on:click="visibilityFilter = 'all'"
+        >
+          Todas
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          x-bind:class="visibilityFilter === 'public' ? 'filter-pill--active' : ''"
+          x-on:click="visibilityFilter = 'public'"
+        >
+          Públicas
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          x-bind:class="visibilityFilter === 'private' ? 'filter-pill--active' : ''"
+          x-on:click="visibilityFilter = 'private'"
+        >
+          Privadas
+        </button>
+      </div>
+    </div>
+
+    {{-- Tracks Grid --}}
+    @if(tracks.length > 0)
+      <div class="tracks-grid">
+        @each(track in tracks)
+          <article
+            class="track-card"
+            data-title="{{ track.title.toLowerCase() }}"
+            data-desc="{{ (track.description || '').toLowerCase() }}"
+            data-author="{{ (track.authorName || '').toLowerCase() }}"
+            data-visibility="{{ track.isPublic ? 'public' : 'private' }}"
+            x-show="matchesTrack($el.dataset)"
+          >
+            <div class="track-card__accent {{ track.hasJoined ? 'track-card__accent--ok' : '' }}"></div>
+
+            <div>
+              <div class="track-card__badges">
+                <span class="badge">
+                  @if(track.isPublic)
+                    @svg('lucide:globe', { width: 12, height: 12 })
+                    <span>Pública</span>
+                  @else
+                    @svg('lucide:lock', { width: 12, height: 12 })
+                    <span>Privada</span>
+                  @end
+                </span>
+
+                <span class="badge badge--primary">
+                  @svg('lucide:play-circle', { width: 12, height: 12 })
+                  <span>{{ track.totalLessons }} {{ track.totalLessons === 1 ? 'videoaula' : 'videoaulas' }}</span>
+                </span>
+
+                @if(track.isOwner)
+                  <span class="badge badge--ok">
+                    @svg('lucide:crown', { width: 11, height: 11 })
+                    <span>Sua Trilha</span>
+                  </span>
+                @elseif(track.hasJoined)
+                  <span class="badge badge--ok">
+                    @svg('lucide:check', { width: 11, height: 11 })
+                    <span>Você participa</span>
+                  </span>
+                @elseif(track.memberStatus === 'pending')
+                  <span class="badge" style="background: var(--warning-bg); color: var(--warning);">
+                    <span>Pendente</span>
+                  </span>
+                @end
+              </div>
+
+              @link({
+                route: 'tracks.show',
+                routeParams: { id: track.id },
+                class: 'track-card__title',
+              })
+                {{ track.title }}
+              @end
+
+              @if(track.description)
+                <p class="track-card__desc">{{ track.description }}</p>
+              @else
+                <p class="track-card__desc" style="color: var(--subtle);">
+                  Trilha organizada com videoaulas do YouTube e acompanhamento de progresso individual.
+                </p>
+              @end
+            </div>
+
+            <div class="track-card__footer" style="margin-top: 20px;">
+              @if(track.hasJoined)
+                @link({
+                  route: 'tracks.show',
+                  routeParams: { id: track.id },
+                  class: 'btn btn--primary btn--sm',
+                })
+                  @svg('lucide:play', { width: 15, height: 15 })
+                  <span>Abrir Trilha</span>
+                @end
+              @elseif(track.isPublic)
+                @form({ route: 'tracks.join', routeParams: { id: track.id }, method: 'POST' })
+                  <button type="submit" class="btn btn--primary btn--sm">
+                    @svg('lucide:log-in', { width: 15, height: 15 })
+                    <span>Entrar na Trilha</span>
+                  </button>
+                @end
+              @else
+                @link({
+                  route: 'tracks.show',
+                  routeParams: { id: track.id },
+                  class: 'btn btn--secondary btn--sm',
+                })
+                  @svg('lucide:lock-open', { width: 15, height: 15 })
+                  <span>{{ track.memberStatus === 'pending' ? 'Ver Pedido' : 'Desbloquear / Solicitar' }}</span>
+                @end
+              @end
+
+              <div class="track-card__actions">
+                <span class="mono" style="font-size: 11.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px;">
+                  @svg('lucide:user', { width: 12, height: 12 })
+                  <span>{{ track.authorName }}</span>
+                </span>
+              </div>
+            </div>
+          </article>
+        @end
+      </div>
+    @else
+      <div class="panel">
+        <div class="empty">
+          <div class="empty__mark">
+            @svg('lucide:compass', { width: 26, height: 26 })
+          </div>
+          <h2>Nenhuma trilha criada ainda</h2>
+          <p>Seja o primeiro a criar uma trilha de estudos na plataforma!</p>
+          <div style="margin-top: 14px;">
+            @link({ route: 'tracks.create', class: 'btn btn--primary' })
+              @svg('lucide:plus', { width: 16, height: 16 })
+              <span>Criar Primeira Trilha</span>
+            @end
+          </div>
+        </div>
+      </div>
+    @end
+  </div>
+@end

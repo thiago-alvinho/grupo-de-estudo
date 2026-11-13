@@ -4,8 +4,13 @@
  */
 
 export const controllers = {
+  Backoffice: () => import('#controllers/backoffice_controller'),
   Lessons: () => import('#controllers/lessons_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
+  Notifications: () => import('#controllers/notifications_controller'),
+  Realtime: () => import('#controllers/realtime_controller'),
   Session: () => import('#controllers/session_controller'),
   StudyTracks: () => import('#controllers/study_tracks_controller'),
+  TrackAccess: () => import('#controllers/track_access_controller'),
+  VideosCatalog: () => import('#controllers/videos_catalog_controller'),
 }

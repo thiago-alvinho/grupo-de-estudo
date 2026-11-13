@@ -172,4 +172,31 @@ test.group('Study Tracks & YouTube Lessons', (group) => {
     assert.lengthOf(progressA, 1)
     assert.lengthOf(progressB, 0)
   })
+
+  test('common students can create and publish public study tracks', async ({ assert }) => {
+    const regularStudent = await User.create({
+      fullName: 'Estudante Criador',
+      email: 'criador_comum@teste.com',
+      password: 'password123',
+      role: 'student',
+    })
+
+    assert.isFalse(regularStudent.isAdmin)
+
+    const payload = await studyTrackValidator.validate({
+      title: 'Grupo de Estudos de Álgebra',
+      description: 'Trilha colaborativa criada por um estudante',
+      isPublic: true,
+    })
+
+    const studentTrack = await StudyTrack.create({
+      userId: regularStudent.id,
+      title: payload.title,
+      description: payload.description || null,
+      isPublic: Boolean(payload.isPublic),
+    })
+
+    assert.isTrue(studentTrack.isPublic)
+    assert.equal(studentTrack.userId, regularStudent.id)
+  })
 })

@@ -8,7 +8,7 @@
   breadcrumb: track.title,
 })
   {{-- SUB-NAV & TRACK TITLE BANNER --}}
-  <div class="track-banner">
+  <div class="track-banner" x-data="{ showOwnerLeaveModal: false, showMemberLeaveModal: false }">
     <div style="display: flex; flex-direction: column; gap: 8px;">
       @link({ route: 'tracks.index', class: 'back-link' })
         @svg('lucide:arrow-left', { width: 15, height: 15 })
@@ -44,8 +44,8 @@
         </p>
       @end
     </div>
-    @if(canManage)
-      <div style="display: flex; align-items: center; gap: 8px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      @if(canManage)
         @link({
           route: 'tracks.edit',
           routeParams: { id: track.id },
@@ -54,6 +54,30 @@
           @svg('lucide:pencil', { width: 14, height: 14 })
           <span>Editar Trilha</span>
         @end
+      @end
+
+      @if(isOwner)
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          x-on:click="showOwnerLeaveModal = true"
+        >
+          @svg('lucide:log-out', { width: 14, height: 14 })
+          <span>Sair da Trilha</span>
+        </button>
+      @elseif(isMember)
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          style="color: var(--danger);"
+          x-on:click="showMemberLeaveModal = true"
+        >
+          @svg('lucide:log-out', { width: 14, height: 14 })
+          <span>Sair da Trilha</span>
+        </button>
+      @end
+
+      @if(canManage)
         @form({
           route: 'tracks.destroy',
           routeParams: { id: track.id },
@@ -65,9 +89,234 @@
             <span>Excluir</span>
           </button>
         @end
-      </div>
+      @end
+    </div>
+
+    {{-- MEMBER LEAVE MODAL: Custom confirmation instead of native browser confirm() --}}
+    @if(!isOwner && isMember)
+      <template x-teleport="body">
+        <div
+          x-show="showMemberLeaveModal"
+          x-cloak
+          x-on:keydown.escape.window="showMemberLeaveModal = false"
+          style="position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(4px);"
+        >
+          <div
+            class="surface-card"
+            style="width: 100%; max-width: 440px; padding: 24px; display: flex; flex-direction: column; gap: 16px; margin: auto;"
+            x-on:click.outside="showMemberLeaveModal = false"
+          >
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--danger-bg); color: var(--danger); flex-shrink: 0;">
+                @svg('lucide:log-out', { width: 18, height: 18 })
+              </span>
+              <div>
+                <h3 class="display-font" style="font-size: 17px; font-weight: 700; margin: 0;">
+                  Sair da Trilha
+                </h3>
+                <p style="font-size: 12.5px; color: var(--muted); margin: 2px 0 0;">
+                  {{ track.title }}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              style="padding: 4px 8px;"
+              x-on:click="showMemberLeaveModal = false"
+              aria-label="Fechar"
+            >
+              @svg('lucide:x', { width: 14, height: 14 })
+            </button>
+          </div>
+
+          <p style="font-size: 13.5px; color: var(--ink-2); line-height: 1.55; margin: 0;">
+            Tem certeza que deseja sair da trilha <strong>{{ track.title }}</strong>? Ela será removida do seu painel <strong>Minhas Trilhas</strong>.
+          </p>
+
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 4px;">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              x-on:click="showMemberLeaveModal = false"
+            >
+              Cancelar
+            </button>
+
+            @form({
+              route: 'tracks.leave',
+              routeParams: { id: track.id },
+              method: 'DELETE',
+            })
+              <button type="submit" class="btn btn--danger btn--sm">
+                @svg('lucide:log-out', { width: 14, height: 14 })
+                <span>Sim, sair da trilha</span>
+              </button>
+            @end
+          </div>
+        </div>
+        </div>
+      </template>
+    @end
+
+    {{-- OWNER LEAVE MODAL: Requires transferring ownership or deleting track --}}
+    @if(isOwner)
+      <template x-teleport="body">
+        <div
+          x-show="showOwnerLeaveModal"
+          x-cloak
+          x-on:keydown.escape.window="showOwnerLeaveModal = false"
+          style="position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(4px);"
+        >
+          <div
+            class="surface-card"
+            style="width: 100%; max-width: 480px; padding: 24px; display: flex; flex-direction: column; gap: 16px; margin: auto;"
+            x-on:click.outside="showOwnerLeaveModal = false"
+          >
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--warning-bg); color: var(--warning); flex-shrink: 0;">
+                @svg('lucide:alert-triangle', { width: 18, height: 18 })
+              </span>
+              <div>
+                <h3 class="display-font" style="font-size: 17px; font-weight: 700; margin: 0;">
+                  Sair da Trilha
+                </h3>
+                <p style="font-size: 12.5px; color: var(--muted); margin: 2px 0 0;">
+                  Você é o dono atual desta trilha.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              style="padding: 4px 8px;"
+              x-on:click="showOwnerLeaveModal = false"
+              aria-label="Fechar"
+            >
+              @svg('lucide:x', { width: 14, height: 14 })
+            </button>
+          </div>
+
+          <p style="font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin: 0;">
+            Para sair desta trilha, você precisa primeiro <strong>passar a posse para outro usuário</strong> ou <strong>excluir a trilha</strong>.
+          </p>
+
+          <div style="padding: 14px; border-radius: var(--r); background: var(--elevated); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--ink); display: inline-flex; align-items: center; gap: 6px;">
+              @svg('lucide:user-check', { width: 15, height: 15, style: 'color: var(--primary);' })
+              <span>1. Passar posse para outro usuário e sair</span>
+            </span>
+
+            @if(transferCandidates && transferCandidates.length > 0)
+              @form({
+                route: 'tracks.transfer_ownership',
+                routeParams: { id: track.id },
+                method: 'POST',
+                onsubmit:
+                  "return confirm('Confirmar transferência de posse e saída desta trilha?');",
+                style: 'display: flex; flex-direction: column; gap: 10px;',
+              })
+                <input type="hidden" name="leaveAfterTransfer" value="true" />
+                <select name="newOwnerId" class="field__input" required>
+                  <option value="">Selecione o novo dono da trilha...</option>
+                  @each(candidate in transferCandidates)
+                    <option value="{{ candidate.id }}">
+                      {{ candidate.fullName || candidate.email }} ({{ candidate.email }})
+                    </option>
+                  @end
+                </select>
+                <button type="submit" class="btn btn--primary btn--sm" style="width: 100%; justify-content: center;">
+                  @svg('lucide:arrow-right-left', { width: 14, height: 14 })
+                  <span>Transferir Posse e Sair</span>
+                </button>
+              @end
+            @else
+              <p style="font-size: 12.5px; color: var(--muted); margin: 0;">
+                Não há outros usuários cadastrados na plataforma para receber a posse no momento.
+              </p>
+            @end
+          </div>
+
+          <div style="padding: 14px; border-radius: var(--r); background: var(--danger-bg); border: 1px solid var(--danger); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+              <div style="font-size: 13px; font-weight: 600; color: var(--danger);">
+                2. Excluir a trilha
+              </div>
+              <div style="font-size: 12px; color: var(--muted);">
+                Remove permanentemente a trilha e suas aulas.
+              </div>
+            </div>
+            @form({
+              route: 'tracks.destroy',
+              routeParams: { id: track.id },
+              onsubmit:
+                "return confirm('Tem certeza que deseja excluir esta trilha e todas as suas aulas?');",
+            })
+              <button type="submit" class="btn btn--danger btn--sm">
+                @svg('lucide:trash-2', { width: 14, height: 14 })
+                <span>Excluir Trilha</span>
+              </button>
+            @end
+          </div>
+        </div>
+        </div>
+      </template>
     @end
   </div>
+
+  {{-- PENDING ACCESS REQUESTS BANNER (Visible immediately at the top for track owner) --}}
+  @if(canManage && !track.isPublic && pendingMembers && pendingMembers.length > 0)
+    <div
+      class="panel"
+      style="padding: 16px 20px; border-left: 4px solid var(--warning); background: var(--warning-bg); display: flex; flex-direction: column; gap: 12px;"
+    >
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14.5px; color: var(--ink);">
+        @svg('lucide:user-plus', { width: 17, height: 17, style: 'color: var(--warning);' })
+        <span>
+          {{ pendingMembers.length }}
+          {{ pendingMembers.length === 1 ? 'solicitação de acesso pendente' : 'solicitações de acesso pendentes' }}
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        @each(pm in pendingMembers)
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="user-pill__avatar" style="width: 30px; height: 30px; font-size: 11px;">
+                {{ pm.user?.initials || 'U' }}
+              </span>
+              <div>
+                <div style="font-size: 13.5px; font-weight: 600; color: var(--ink);">
+                  {{ pm.user?.fullName || pm.user?.email }}
+                </div>
+                <div style="font-size: 12px; color: var(--muted);">
+                  Solicitou acesso a esta trilha privada • {{ pm.user?.email }}
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              @form({ route: 'tracks.members.approve', routeParams: { id: track.id, memberId: pm.id }, method: 'POST' })
+                <button type="submit" class="btn btn--primary btn--sm">
+                  @svg('lucide:check', { width: 14, height: 14 })
+                  <span>Aprovar Acesso</span>
+                </button>
+              @end
+              @form({ route: 'tracks.members.reject', routeParams: { id: track.id, memberId: pm.id }, method: 'POST' })
+                <button type="submit" class="btn btn--danger btn--sm">
+                  @svg('lucide:x', { width: 14, height: 14 })
+                  <span>Recusar</span>
+                </button>
+              @end
+            </div>
+          </div>
+        @end
+      </div>
+    </div>
+  @end
+
   {{-- ASYMMETRIC TWO-COLUMN STUDY WORKSPACE --}}
   <div class="study-grid">
     {{-- LEFT COLUMN: Video Player, Lesson Controls, Stepper & Personal Notes --}}
@@ -94,10 +343,6 @@
                 {{ activeLesson.number }}
                 de
                 {{ totalLessons }}
-              </span>
-              <span class="mono" style="font-size: 12px; color: var(--muted);">
-                • YouTube ID:
-                {{ activeLesson.youtubeVideoId }}
               </span>
             </div>
             <h2
@@ -177,22 +422,35 @@
             @end
           </div>
         @end
-        {{-- Lesson Notes Container (persisted per lesson in browser storage) --}}
+        {{-- Lesson Notes Container (persisted in SQLite database) --}}
         <div
           class="notes-card"
           x-data="{
-            storageKey: 'gde_note_lesson_{{ activeLesson.id }}',
-            note: '',
+            note: {{ JSON.stringify(activeNote || '') }},
             savedAt: null,
-            init() {
-            this.note = localStorage.getItem(this.storageKey) || ''
-            },
-            saveNote() {
-            localStorage.setItem(this.storageKey, this.note)
-            const now = new Date()
-            this.savedAt = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            saving: false,
+            async saveNote() {
+              this.saving = true
+              try {
+                const res = await fetch('{{ route('lessons.save_note', { trackId: track.id, id: activeLesson.id }) }}', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrfToken }}'
+                  },
+                  body: JSON.stringify({ content: this.note })
+                })
+                if (res.ok) {
+                  const data = await res.json()
+                  this.savedAt = data.savedAt || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                }
+              } finally {
+                this.saving = false
+              }
             }
-            }"
+          }"
         >
           <div class="notes-tabs">
             <span class="notes-tab notes-tab--active">
@@ -215,11 +473,19 @@
               </label>
               <span
                 class="mono"
-                style="font-size: 11.5px; color: var(--ok);"
-                x-show="savedAt"
+                style="font-size: 11.5px; color: var(--muted);"
+                x-show="saving"
                 x-cloak
               >
-                ✓ Salvo às
+                Salvando...
+              </span>
+              <span
+                class="mono"
+                style="font-size: 11.5px; color: var(--ok);"
+                x-show="savedAt && !saving"
+                x-cloak
+              >
+                ✓ Salvo na nuvem às
                 <span x-text="savedAt"></span>
               </span>
             </div>
@@ -230,7 +496,7 @@
               rows="4"
               placeholder="Escreva seus apontamentos desta aula, fórmulas importantes ou dúvidas para revisar depois..."
               x-model="note"
-              x-on:input.debounce.500ms="saveNote()"
+              x-on:input.debounce.800ms="saveNote()"
             ></textarea>
 
             <div
@@ -240,19 +506,20 @@
                 class="mono"
                 style="font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px;"
               >
-                @svg('lucide:check', {
+                @svg('lucide:cloud-check', {
                   width: 14,
                   height: 14,
                   style: 'color: var(--ok);',
                 })
-                
-                
-                Salvo automaticamente neste navegador para esta aula
-
-
+                Sincronizado automaticamente na sua conta
               </span>
-              <button type="button" class="btn btn--primary btn--sm" x-on:click="saveNote()">
-                Salvar anotação
+              <button
+                type="button"
+                class="btn btn--primary btn--sm"
+                x-on:click="saveNote()"
+                x-bind:disabled="saving"
+              >
+                <span x-text="saving ? 'Salvando...' : 'Salvar anotação'"></span>
               </button>
             </div>
           </div>
@@ -393,12 +660,11 @@
                       {{ String(lesson.number).padStart(2, '0') }}.
                       {{ lesson.title }}
                     </span>
-                    <span class="lesson-link__meta">
-                      <span>ID: {{ lesson.youtubeVideoId }}</span>
-                      @if(isCurrent)
+                    @if(isCurrent)
+                      <span class="lesson-link__meta">
                         <span class="playing-pill">Tocando</span>
-                      @end
-                    </span>
+                      </span>
+                    @end
                   @end
                   @if(canManage)
                     <div class="lesson-actions">
@@ -560,6 +826,183 @@
                 </span>
               </button>
             </div>
+          @end
+        </div>
+      @end
+
+      {{-- CARD 3: COMPARTILHAMENTO E SOLICITAÇÕES DE ACESSO (Private Track Owner Only) --}}
+      @if(canManage && !track.isPublic)
+        <div
+          id="access-requests"
+          class="surface-card"
+          style="padding: 20px; display: flex; flex-direction: column; gap: 14px;"
+          x-data="{
+            liveRequests: []
+          }"
+          x-on:gde:access-request.window="
+            if ($event.detail && Number($event.detail.trackId) === {{ track.id }} && $event.detail.member) {
+              if (!liveRequests.some((r) => r.id === $event.detail.member.id)) {
+                liveRequests.unshift($event.detail.member)
+              }
+            }
+          "
+        >
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <h3 class="display-font" style="font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin: 0;">
+              @svg('lucide:users', { width: 17, height: 17, style: 'color: var(--primary);' })
+              <span>Acesso à Trilha Privada</span>
+            </h3>
+            @if(track.accessPassword)
+              <span class="badge badge--ok" style="font-size: 10.5px;">
+                @svg('lucide:key-round', { width: 11, height: 11 })
+                <span>Com Senha</span>
+              </span>
+            @end
+          </div>
+
+          {{-- Real-time incoming requests --}}
+          <template x-if="liveRequests.length > 0">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--primary);">
+                Novas solicitações (Tempo Real):
+              </span>
+              <template x-for="req in liveRequests" :key="req.id">
+                <div style="padding: 10px 12px; border-radius: var(--r); background: var(--surface-tint); border: 1px solid var(--surface-tint-border); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <div style="min-width: 0;">
+                    <div style="font-size: 13px; font-weight: 600; color: var(--ink);" x-text="req.userName"></div>
+                    <div style="font-size: 11.5px; color: var(--muted);" x-text="req.userEmail"></div>
+                  </div>
+                  <div style="display: flex; gap: 6px;">
+                    <form :action="'/tracks/{{ track.id }}/members/' + req.id + '/approve'" method="POST">
+                      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                      <button type="submit" class="btn btn--primary btn--sm" title="Aprovar">
+                        @svg('lucide:check', { width: 13, height: 13 })
+                      </button>
+                    </form>
+                    <form :action="'/tracks/{{ track.id }}/members/' + req.id + '/reject'" method="POST">
+                      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                      <button type="submit" class="btn btn--danger btn--sm" title="Recusar">
+                        @svg('lucide:x', { width: 13, height: 13 })
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          {{-- Server-rendered Pending Requests --}}
+          @if(pendingMembers && pendingMembers.length > 0)
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--warning);">
+                Solicitações Pendentes ({{ pendingMembers.length }}):
+              </span>
+              @each(pm in pendingMembers)
+                <div style="padding: 10px 12px; border-radius: var(--r); background: var(--elevated); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <div style="min-width: 0;">
+                    <div style="font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      {{ pm.user?.fullName || pm.user?.email }}
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      {{ pm.user?.email }}
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                    @form({ route: 'tracks.members.approve', routeParams: { id: track.id, memberId: pm.id }, method: 'POST' })
+                      <button type="submit" class="btn btn--primary btn--sm" title="Aprovar acesso">
+                        @svg('lucide:check', { width: 13, height: 13 })
+                      </button>
+                    @end
+                    @form({ route: 'tracks.members.reject', routeParams: { id: track.id, memberId: pm.id }, method: 'POST' })
+                      <button type="submit" class="btn btn--danger btn--sm" title="Recusar acesso">
+                        @svg('lucide:x', { width: 13, height: 13 })
+                      </button>
+                    @end
+                  </div>
+                </div>
+              @end
+            </div>
+          @else
+            <p style="font-size: 12.5px; color: var(--muted); margin: 0;" x-show="liveRequests.length === 0">
+              Nenhuma solicitação pendente no momento.
+            </p>
+          @end
+
+          {{-- Approved Members --}}
+          @if(approvedMembers && approvedMembers.length > 0)
+            <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line);">
+              <span style="font-size: 12px; font-weight: 600; color: var(--ok);">
+                Membros com Acesso ({{ approvedMembers.length }}):
+              </span>
+              @each(am in approvedMembers)
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px;">
+                  <span style="color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ am.user?.fullName || am.user?.email }}
+                  </span>
+                  @form({ route: 'tracks.members.remove', routeParams: { id: track.id, memberId: am.id }, method: 'DELETE' })
+                    <button
+                      type="submit"
+                      class="btn btn--secondary btn--sm"
+                      style="padding: 2px 6px; color: var(--danger);"
+                      title="Remover acesso"
+                    >
+                      @svg('lucide:user-x', { width: 12, height: 12 })
+                    </button>
+                  @end
+                </div>
+              @end
+            </div>
+          @end
+        </div>
+      @end
+
+      {{-- CARD 4: TRANSFERIR POSSE DA TRILHA (Owner or Admin) --}}
+      @if(canManage)
+        <div class="surface-card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <h3 class="display-font" style="font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin: 0;">
+            @svg('lucide:crown', { width: 17, height: 17, style: 'color: var(--primary);' })
+            <span>Posse da Trilha</span>
+          </h3>
+
+          <p style="font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.5;">
+            Dono atual: <strong style="color: var(--ink);">{{ track.user?.fullName || track.user?.email }}</strong>.
+            Você pode transferir a posse para outro usuário.
+          </p>
+
+          @if(transferCandidates && transferCandidates.length > 0)
+            @form({
+              route: 'tracks.transfer_ownership',
+              routeParams: { id: track.id },
+              method: 'POST',
+              onsubmit:
+                "return confirm('Tem certeza que deseja transferir a posse desta trilha para o usuário selecionado?');",
+              style: 'display: flex; flex-direction: column; gap: 10px;',
+            })
+              <select name="newOwnerId" class="field__input" required aria-label="Novo dono da trilha">
+                <option value="">Selecionar novo dono...</option>
+                @each(candidate in transferCandidates)
+                  <option value="{{ candidate.id }}">
+                    {{ candidate.fullName || candidate.email }} ({{ candidate.email }})
+                  </option>
+                @end
+              </select>
+
+              @if(isOwner)
+                <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); cursor: pointer;">
+                  <input type="checkbox" name="leaveAfterTransfer" value="true" />
+                  <span>Sair da trilha após transferir a posse</span>
+                </label>
+              @end
+
+              <button type="submit" class="btn btn--secondary btn--sm" style="width: 100%; justify-content: center;">
+                @svg('lucide:arrow-right-left', { width: 14, height: 14 })
+                <span>Transferir Posse</span>
+              </button>
+            @end
+          @else
+            <p style="font-size: 12.5px; color: var(--muted); margin: 0;">
+              Nenhum outro usuário cadastrado disponível para receber a posse.
+            </p>
           @end
         </div>
       @end

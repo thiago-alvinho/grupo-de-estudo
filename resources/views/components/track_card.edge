@@ -56,53 +56,51 @@
       </p>
     @end
 
-    <div class="progress" style="margin-top: 20px;">
-      <div class="progress__meta {{ isComplete ? 'progress__meta--ok' : '' }}">
-        @if(isComplete)
-          <span style="display: inline-flex; align-items: center; gap: 5px;">
-            @svg('lucide:check-check', { width: 15, height: 15 })
-            
-            
-            
-            100% Concluída (
-
-
-            {{ track.completedLessons }}
-            
-            
-             de
-
-
-            {{ track.totalLessons }}
-            
-            
-             aulas)
-
-
-
-          </span>
+    @if(track.isLocked)
+      <div style="margin-top: 20px; padding: 10px 12px; border-radius: var(--r); background: var(--elevated); border: 1px dashed var(--line); font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px;">
+        @svg('lucide:key-round', { width: 14, height: 14 })
+        @if(track.memberStatus === 'pending')
+          <span>Solicitação enviada — aguardando aprovação do dono</span>
+        @elseif(track.hasPassword)
+          <span>Requer senha de acesso ou aprovação do dono</span>
         @else
-          <span>{{ track.completedLessons }} de {{ track.totalLessons }} aulas concluídas</span>
+          <span>Requer solicitação de acesso ao dono</span>
         @end
-
-        <span class="progress__pct {{ isComplete ? 'progress__pct--ok' : '' }}">
-          {{ track.progressPercent }}%
-        </span>
       </div>
+    @else
+      <div class="progress" style="margin-top: 20px;">
+        <div class="progress__meta {{ isComplete ? 'progress__meta--ok' : '' }}">
+          @if(isComplete)
+            <span style="display: inline-flex; align-items: center; gap: 5px;">
+              @svg('lucide:check-check', { width: 15, height: 15 })
+              100% Concluída ({{ track.completedLessons }} de {{ track.totalLessons }} aulas)
+            </span>
+          @else
+            <span>{{ track.completedLessons }} de {{ track.totalLessons }} aulas concluídas</span>
+          @end
 
-      <div class="progress__bar">
-        <div class="progress__fill" style="width: {{ track.progressPercent }}%;"></div>
+          <span class="progress__pct {{ isComplete ? 'progress__pct--ok' : '' }}">
+            {{ track.progressPercent }}%
+          </span>
+        </div>
+
+        <div class="progress__bar">
+          <div class="progress__fill" style="width: {{ track.progressPercent }}%;"></div>
+        </div>
       </div>
-    </div>
+    @end
   </div>
 
   <div class="track-card__footer">
     @link({
       route: 'tracks.show',
       routeParams: { id: track.id },
-      class: isComplete ? 'btn btn--secondary btn--sm' : 'btn btn--primary btn--sm',
+      class: track.isLocked ? 'btn btn--secondary btn--sm' : (isComplete ? 'btn btn--secondary btn--sm' : 'btn btn--primary btn--sm'),
     })
-      @if(isComplete)
+      @if(track.isLocked)
+        @svg('lucide:lock-open', { width: 15, height: 15 })
+        <span>{{ track.memberStatus === 'pending' ? 'Ver Status do Pedido' : 'Desbloquear / Solicitar' }}</span>
+      @elseif(isComplete)
         @svg('lucide:rotate-ccw', { width: 15, height: 15, style: 'color: var(--ok);' })
         <span>Revisar Conteúdo</span>
       @elseif(track.completedLessons > 0)
@@ -140,7 +138,9 @@
           </button>
         @end
       @else
-        <span class="mono" style="font-size: 11px; color: var(--muted);">Disciplina Oficial</span>
+        <span class="mono" style="font-size: 11px; color: var(--muted);">
+          {{ track.authorName || 'Comunidade' }}
+        </span>
       @end
     </div>
   </div>

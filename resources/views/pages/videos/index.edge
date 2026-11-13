@@ -1,0 +1,240 @@
+@layouts.app({ title: 'Buscar Vídeos' })
+  <div
+    x-data="{
+      clientSearch: '',
+      statusFilter: 'all',
+      matchesVideo(el) {
+        const q = this.clientSearch.trim().toLowerCase()
+        if (q && !el.dataset.title.toLowerCase().includes(q) && !el.dataset.track.toLowerCase().includes(q)) {
+          return false
+        }
+        if (this.statusFilter === 'completed' && el.dataset.completed !== 'true') return false
+        if (this.statusFilter === 'pending' && el.dataset.completed === 'true') return false
+        return true
+      }
+    }"
+    style="display: flex; flex-direction: column; gap: 24px;"
+  >
+    {{-- Header Banner --}}
+    <div class="hero-greeting">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span class="badge badge--primary">
+            @svg('lucide:search', { width: 13, height: 13 })
+            <span>Catálogo Geral</span>
+          </span>
+          <span class="badge">
+            {{ totalCount }} {{ totalCount === 1 ? 'vídeo disponível' : 'vídeos disponíveis' }}
+          </span>
+        </div>
+        <h1 class="hero-greeting__title">Buscar Vídeos</h1>
+        <p class="hero-greeting__sub">
+          Explore todas as videoaulas das suas trilhas e das disciplinas públicas. Pesquise por assunto ou filtre por status de conclusão.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        @link({ route: 'videos.create', class: 'btn btn--primary' })
+          @svg('lucide:upload-cloud', { width: 16, height: 16 })
+          <span>Enviar Novo Vídeo</span>
+        @end
+      </div>
+    </div>
+
+    {{-- Search & Multi-filter Bar --}}
+    <div class="panel" style="padding: 16px;">
+      <form method="GET" action="{{ route('videos.index') }}" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+          {{-- Search Input --}}
+          <div style="position: relative; flex: 1 1 300px;">
+            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex;">
+              @svg('lucide:search', { width: 17, height: 17 })
+            </span>
+            <input
+              type="text"
+              name="q"
+              value="{{ searchTerm || '' }}"
+              placeholder="Pesquise por título da aula, fórmula, tópico..."
+              class="field__input"
+              style="padding-left: 38px; width: 100%; height: 42px;"
+              x-model="clientSearch"
+            />
+          </div>
+
+          {{-- Track Selector Filter --}}
+          <div style="flex: 0 1 240px; min-width: 180px;">
+            <select
+              name="trackId"
+              class="field__input"
+              style="height: 42px; width: 100%;"
+              onchange="this.form.submit()"
+            >
+              <option value="">Todas as Trilhas</option>
+              @each(track in tracks)
+                <option value="{{ track.id }}" {{ String(selectedTrackId) === String(track.id) ? 'selected' : '' }}>
+                  {{ track.title }} ({{ track.isPublic ? 'Pública' : 'Privada' }})
+                </option>
+              @end
+            </select>
+          </div>
+
+          {{-- Status Quick Filter (Client side via Alpine) --}}
+          <div style="flex: 0 1 180px;">
+            <select
+              class="field__input"
+              style="height: 42px; width: 100%;"
+              x-model="statusFilter"
+            >
+              <option value="all">Status: Todos</option>
+              <option value="pending">⏳ Pendentes</option>
+              <option value="completed">✓ Concluídos</option>
+            </select>
+          </div>
+
+          {{-- Action Buttons --}}
+          <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn--secondary" style="height: 42px;">
+              <span>Buscar</span>
+            </button>
+            @if(searchTerm || selectedTrackId)
+              <a href="{{ route('videos.index') }}" class="btn btn--secondary" style="height: 42px;" title="Limpar filtros">
+                @svg('lucide:x', { width: 15, height: 15 })
+                <span>Limpar</span>
+              </a>
+            @end
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {{-- Videos Grid --}}
+    @if(videos.length > 0)
+      <div
+        class="video-search-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px;"
+      >
+        @each(video in videos)
+          <article
+            class="video-card"
+            data-title="{{ video.title }}"
+            data-track="{{ video.trackTitle }}"
+            data-completed="{{ video.isCompleted ? 'true' : 'false' }}"
+            x-show="matchesVideo($el)"
+            style="background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, box-shadow 0.15s ease;"
+          >
+            {{-- YouTube Thumbnail with aspect ratio --}}
+            <a
+              href="{{ route('tracks.show', { id: video.studyTrackId }, { qs: { lesson: video.id } }) }}"
+              style="position: relative; display: block; aspect-ratio: 16/9; background: #000; overflow: hidden;"
+              title="Assistir {{ video.title }}"
+            >
+              <img
+                src="https://img.youtube.com/vi/{{ video.youtubeVideoId }}/hqdefault.jpg"
+                alt="{{ video.title }}"
+                loading="lazy"
+                style="width: 100%; height: 100%; object-fit: cover; opacity: 0.92; transition: opacity 0.2s ease, transform 0.2s ease;"
+                onmouseover="this.style.opacity='1'; this.style.transform='scale(1.03)';"
+                onmouseout="this.style.opacity='0.92'; this.style.transform='scale(1)';"
+              />
+
+              {{-- Play overlay icon --}}
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); display: flex; align-items: center; justify-content: center; color: #fff; backdrop-filter: blur(4px);">
+                  @svg('lucide:play', { width: 20, height: 20, style: 'margin-left: 2px;' })
+                </div>
+              </div>
+
+              {{-- Completion Badge Overlay --}}
+              <div style="position: absolute; top: 10px; right: 10px;">
+                @if(video.isCompleted)
+                  <span class="badge" style="background: var(--ok-bright); color: #fff; border: none; font-weight: 600; box-shadow: var(--shadow-sm);">
+                    @svg('lucide:check', { width: 12, height: 12 })
+                    <span>Concluído</span>
+                  </span>
+                @else
+                  <span class="badge" style="background: rgba(15, 23, 42, 0.75); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+                    @svg('lucide:clock', { width: 11, height: 11 })
+                    <span>Pendente</span>
+                  </span>
+                @end
+              </div>
+            </a>
+
+            {{-- Video Metadata Body --}}
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px; flex: 1;">
+              {{-- Track Tag --}}
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                <span class="badge" style="font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  @if(video.trackIsPublic)
+                    @svg('lucide:globe', { width: 10, height: 10 })
+                  @else
+                    @svg('lucide:lock', { width: 10, height: 10 })
+                  @end
+                  <span>{{ video.trackTitle }}</span>
+                </span>
+              </div>
+
+              {{-- Video Title --}}
+              <h3 style="font-size: 15px; font-weight: 600; line-height: 1.35; margin: 0; color: var(--ink); flex: 1;">
+                <a
+                  href="{{ route('tracks.show', { id: video.studyTrackId }, { qs: { lesson: video.id } }) }}"
+                  style="color: inherit; text-decoration: none;"
+                  onmouseover="this.style.color='var(--primary)';"
+                  onmouseout="this.style.color='inherit';"
+                >
+                  {{ video.title }}
+                </a>
+              </h3>
+
+              {{-- Footer Info & Action --}}
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); margin-top: auto;">
+                <span style="font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px;">
+                  @svg('lucide:user', { width: 12, height: 12 })
+                  <span>{{ video.authorName }}</span>
+                </span>
+
+                <a
+                  href="{{ route('tracks.show', { id: video.studyTrackId }, { qs: { lesson: video.id } }) }}"
+                  class="btn btn--primary btn--sm"
+                  style="padding: 4px 10px; font-size: 12px;"
+                >
+                  @svg('lucide:play-circle', { width: 13, height: 13 })
+                  <span>Assistir</span>
+                </a>
+              </div>
+            </div>
+          </article>
+        @end
+      </div>
+    @else
+      <div class="panel">
+        <div class="empty">
+          <div class="empty__mark">
+            @svg('lucide:search-x', { width: 28, height: 28 })
+          </div>
+          <h2>Nenhum vídeo encontrado</h2>
+          <p>
+            @if(searchTerm || selectedTrackId)
+              Não encontramos videoaulas correspondentes aos termos pesquisados. Tente remover os filtros ou buscar por outro termo.
+            @else
+              Nenhuma videoaula foi cadastrada nas suas trilhas ainda.
+            @end
+          </p>
+          <div style="display: flex; gap: 10px; justify-content: center; margin-top: 14px;">
+            @if(searchTerm || selectedTrackId)
+              <a href="{{ route('videos.index') }}" class="btn btn--secondary">
+                @svg('lucide:rotate-ccw', { width: 15, height: 15 })
+                <span>Limpar Filtros</span>
+              </a>
+            @else
+              @link({ route: 'tracks.create', class: 'btn btn--primary' })
+                @svg('lucide:plus', { width: 16, height: 16 })
+                <span>Criar Trilha e Adicionar Vídeos</span>
+              @end
+            @end
+          </div>
+        </div>
+      </div>
+    @end
+  </div>
+@end

@@ -8,6 +8,7 @@
       previewTitle: {{ JSON.stringify(old('title') || track.title) }},
       previewDesc: {{ JSON.stringify(old('description') || track.description || '') }},
       previewPublic: {{ track.isPublic ? 'true' : 'false' }},
+      removePassword: false,
       submitting: false
       }"
     style="display: flex; flex-direction: column; gap: 26px;"
@@ -83,58 +84,122 @@
                 })
                 @!field.error()
               @end
-              @if(isAdmin)
-                <div>
-                  <span class="field__label" style="display: block; margin-bottom: 8px;">
-                    Visibilidade da Trilha
-                  </span>
-                  <input
-                    type="hidden"
-                    name="isPublic"
-                    x-bind:value="previewPublic ? 'true' : 'false'"
-                  />
-                  <div class="visibility-grid">
-                    <div
-                      class="visibility-card"
-                      x-bind:class="!previewPublic ? 'visibility-card--active' : ''"
-                      x-on:click="previewPublic = false"
-                    >
-                      <span style="color: var(--primary); margin-top: 2px;">
-                        @svg('lucide:lock', { width: 18, height: 18 })
-                      </span>
-                      <div>
-                        <span style="font-size: 13.5px; font-weight: 600;">Trilha Privada</span>
-                        <p style="font-size: 12.5px; color: var(--muted); margin-top: 4px;">
-                          Visível apenas para a conta criadora.
-                        </p>
-                      </div>
+              <div>
+                <span class="field__label" style="display: block; margin-bottom: 8px;">
+                  Visibilidade da Trilha
+                </span>
+                <input
+                  type="hidden"
+                  name="isPublic"
+                  x-bind:value="previewPublic ? 'true' : 'false'"
+                />
+                <div class="visibility-grid">
+                  <div
+                    class="visibility-card"
+                    x-bind:class="!previewPublic ? 'visibility-card--active' : ''"
+                    x-on:click="previewPublic = false"
+                  >
+                    <span style="color: var(--primary); margin-top: 2px;">
+                      @svg('lucide:lock', { width: 18, height: 18 })
+                    </span>
+                    <div>
+                      <span style="font-size: 13.5px; font-weight: 600;">Trilha Privada</span>
+                      <p style="font-size: 12.5px; color: var(--muted); margin-top: 4px;">
+                        Visível apenas para a conta criadora.
+                      </p>
                     </div>
+                  </div>
 
-                    <div
-                      class="visibility-card"
-                      x-bind:class="previewPublic ? 'visibility-card--active' : ''"
-                      x-on:click="previewPublic = true"
-                    >
-                      <span style="color: var(--primary); margin-top: 2px;">
-                        @svg('lucide:globe', { width: 18, height: 18 })
-                      </span>
-                      <div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <span style="font-size: 13.5px; font-weight: 600;">
-                            Disciplina Pública
-                          </span>
-                          <span class="badge badge--ok" style="font-size: 10px; padding: 2px 7px;">
-                            Admin
-                          </span>
-                        </div>
-                        <p style="font-size: 12.5px; color: var(--muted); margin-top: 4px;">
-                          Disponível para todos os estudantes da plataforma.
-                        </p>
+                  <div
+                    class="visibility-card"
+                    x-bind:class="previewPublic ? 'visibility-card--active' : ''"
+                    x-on:click="previewPublic = true"
+                  >
+                    <span style="color: var(--primary); margin-top: 2px;">
+                      @svg('lucide:globe', { width: 18, height: 18 })
+                    </span>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 13.5px; font-weight: 600;">
+                          Trilha Pública
+                        </span>
+                        <span class="badge badge--ok" style="font-size: 10px; padding: 2px 7px;">
+                          Compartilhada
+                        </span>
                       </div>
+                      <p style="font-size: 12.5px; color: var(--muted); margin-top: 4px;">
+                        Disponível para todos os estudantes da plataforma.
+                      </p>
                     </div>
                   </div>
                 </div>
-              @end
+
+                <div x-show="!previewPublic" x-cloak style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                  @field.root({ name: 'accessPassword' })
+                    <div class="field__label-row">
+                      @!field.label({ text: track.accessPassword ? 'Alterar Senha de Acesso (deixe em branco para manter a atual)' : 'Definir Senha de Acesso (opcional)' })
+                    </div>
+                    <input
+                      type="text"
+                      id="accessPassword"
+                      name="accessPassword"
+                      class="field__input"
+                      placeholder="Nova senha para convidados (mínimo 3 caracteres)"
+                      minlength="3"
+                      maxlength="100"
+                      x-bind:disabled="removePassword"
+                      x-bind:style="removePassword ? 'opacity: 0.45; cursor: not-allowed;' : ''"
+                    />
+                    @!field.error()
+                  @end
+
+                  @if(track.accessPassword)
+                    <input
+                      type="hidden"
+                      name="removePassword"
+                      x-bind:value="removePassword ? 'true' : 'false'"
+                    />
+                    <button
+                      type="button"
+                      x-on:click="removePassword = !removePassword"
+                      x-bind:style="removePassword
+                        ? 'display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--danger); background: var(--danger-bg); color: var(--ink); cursor: pointer; text-align: left; transition: all 0.15s ease;'
+                        : 'display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--elevated); color: var(--ink-2); cursor: pointer; text-align: left; transition: all 0.15s ease;'"
+                    >
+                      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                        <span
+                          x-bind:style="removePassword
+                            ? 'width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--danger); color: #fff; transition: all 0.15s ease;'
+                            : 'width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--card); border: 1px solid var(--line); color: var(--muted); transition: all 0.15s ease;'"
+                        >
+                          @svg('lucide:trash-2', { width: 16, height: 16 })
+                        </span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                          <span style="font-size: 13.5px; font-weight: 600;" x-bind:style="removePassword ? 'color: var(--danger);' : 'color: var(--ink);'">
+                            Remover senha atual
+                          </span>
+                          <span style="font-size: 12px; color: var(--muted);">
+                            Manter acesso apenas por solicitação e aprovação manual
+                          </span>
+                        </div>
+                      </div>
+
+                      {{-- Custom Toggle Switch --}}
+                      <div
+                        x-bind:style="removePassword
+                          ? 'width: 40px; height: 22px; border-radius: 999px; background: var(--danger); position: relative; flex-shrink: 0; transition: background 0.15s ease;'
+                          : 'width: 40px; height: 22px; border-radius: 999px; background: var(--line-2); position: relative; flex-shrink: 0; transition: background 0.15s ease;'"
+                      >
+                        <span
+                          x-bind:style="removePassword
+                            ? 'position: absolute; top: 3px; left: 21px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.2);'
+                            : 'position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.2);'"
+                        ></span>
+                      </div>
+                    </button>
+                  @end
+                </div>
+              </div>
             </div>
           </section>
 
@@ -156,6 +221,66 @@
             </button>
           </div>
         @end
+
+        {{-- Transfer Ownership Card --}}
+        <section class="surface-card" style="margin-top: 20px;">
+          <div class="surface-card__head">
+            <div class="surface-card__head-icon">
+              @svg('lucide:crown', { width: 16, height: 16 })
+            </div>
+            <h2 class="surface-card__title">Posse da Trilha</h2>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <p style="font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.55;">
+              Dono atual: <strong style="color: var(--ink);">{{ track.user?.fullName || track.user?.email }}</strong>.
+              Você pode transferir a posse desta trilha para outro usuário cadastrado.
+            </p>
+
+            @if(transferCandidates && transferCandidates.length > 0)
+              @form({
+                route: 'tracks.transfer_ownership',
+                routeParams: { id: track.id },
+                method: 'POST',
+                onsubmit:
+                  "return confirm('Tem certeza que deseja transferir a posse desta trilha para o usuário selecionado?');",
+                style: 'display: flex; flex-direction: column; gap: 12px;',
+              })
+                <div>
+                  <label for="edit-newOwnerId" class="field__label" style="display: block; margin-bottom: 6px;">
+                    Novo dono da trilha
+                  </label>
+                  <select id="edit-newOwnerId" name="newOwnerId" class="field__input" required>
+                    <option value="">Selecione um usuário...</option>
+                    @each(candidate in transferCandidates)
+                      <option value="{{ candidate.id }}">
+                        {{ candidate.fullName || candidate.email }} ({{ candidate.email }})
+                      </option>
+                    @end
+                  </select>
+                </div>
+
+                @if(isOwner)
+                  <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer;">
+                    <input type="checkbox" name="leaveAfterTransfer" value="true" />
+                    <span>Sair da trilha após transferir a posse</span>
+                  </label>
+                @end
+
+                <div style="display: flex; justify-content: flex-end;">
+                  <button type="submit" class="btn btn--secondary">
+                    @svg('lucide:arrow-right-left', { width: 15, height: 15 })
+                    <span>Transferir Posse</span>
+                  </button>
+                </div>
+              @end
+            @else
+              <p style="font-size: 13px; color: var(--muted); margin: 0;">
+                Não há outros usuários cadastrados disponíveis para receber a posse no momento.
+              </p>
+            @end
+          </div>
+        </section>
       </div>
       {{-- Right Column: Live Preview --}}
       <aside style="display: flex; flex-direction: column; gap: 20px; position: sticky; top: 88px;">

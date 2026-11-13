@@ -1,0 +1,139 @@
+@layouts.app({ title: 'BackOffice — Vídeos' })
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    {{-- Header --}}
+    <div class="hero-greeting">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span class="badge badge--primary">
+            @svg('lucide:shield', { width: 13, height: 13 })
+            <span>Painel Administrativo (BO)</span>
+          </span>
+        </div>
+        <h1 class="hero-greeting__title">Gestão de Vídeos</h1>
+        <p class="hero-greeting__sub">
+          Monitore todas as videoaulas cadastradas na plataforma e execute ações de moderação.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        @link({ route: 'videos.create', class: 'btn btn--primary' })
+          @svg('lucide:upload-cloud', { width: 15, height: 15 })
+          <span>Cadastrar Novo Vídeo</span>
+        @end
+      </div>
+    </div>
+
+    {{-- Filter bar --}}
+    <div class="panel" style="padding: 16px;">
+      <form method="GET" action="{{ route('admin.videos') }}" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+        <div style="position: relative; flex: 1 1 260px;">
+          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex;">
+            @svg('lucide:search', { width: 16, height: 16 })
+          </span>
+          <input
+            type="text"
+            name="q"
+            value="{{ searchTerm || '' }}"
+            placeholder="Buscar por título ou trilha..."
+            class="field__input"
+            style="padding-left: 36px; width: 100%; height: 38px;"
+          />
+        </div>
+
+        <div style="flex: 0 1 220px;">
+          <select name="trackId" class="field__input" style="height: 38px; width: 100%;" onchange="this.form.submit()">
+            <option value="">Todas as Trilhas</option>
+            @each(track in tracks)
+              <option value="{{ track.id }}" {{ String(selectedTrackId) === String(track.id) ? 'selected' : '' }}>
+                {{ track.title }}
+              </option>
+            @end
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn--secondary" style="height: 38px;">Filtrar</button>
+
+        @if(searchTerm || selectedTrackId)
+          <a href="{{ route('admin.videos') }}" class="btn btn--secondary" style="height: 38px;">
+            @svg('lucide:x', { width: 14, height: 14 })
+            <span>Limpar</span>
+          </a>
+        @end
+      </form>
+    </div>
+
+    {{-- Lessons Table --}}
+    <div class="panel" style="padding: 0; overflow: hidden;">
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+          <thead>
+            <tr style="background: var(--elevated); border-bottom: 1px solid var(--line);">
+              <th style="padding: 12px 16px; font-weight: 600; color: var(--muted); width: 120px;">Preview</th>
+              <th style="padding: 12px 16px; font-weight: 600; color: var(--muted);">Título do Vídeo</th>
+              <th style="padding: 12px 16px; font-weight: 600; color: var(--muted);">Trilha Vinculada</th>
+              <th style="padding: 12px 16px; font-weight: 600; color: var(--muted);">Autor</th>
+              <th style="padding: 12px 16px; font-weight: 600; color: var(--muted); text-align: right;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @each(lesson in lessons)
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 12px 16px;">
+                  <a
+                    href="{{ route('tracks.show', { id: lesson.studyTrackId }, { qs: { lesson: lesson.id } }) }}"
+                    target="_blank"
+                    style="display: block; width: 90px; aspect-ratio: 16/9; background: #000; border-radius: var(--r); overflow: hidden;"
+                  >
+                    <img
+                      src="https://img.youtube.com/vi/{{ lesson.youtubeVideoId }}/mqdefault.jpg"
+                      alt="{{ lesson.title }}"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    />
+                  </a>
+                </td>
+                <td style="padding: 12px 16px;">
+                  <div style="font-weight: 600; color: var(--ink);">{{ lesson.title }}</div>
+                </td>
+                <td style="padding: 12px 16px;">
+                  <a
+                    href="{{ route('tracks.show', { id: lesson.studyTrackId }) }}"
+                    style="color: var(--primary); text-decoration: none; font-weight: 500;"
+                  >
+                    {{ lesson.studyTrack ? lesson.studyTrack.title : 'Sem trilha' }}
+                  </a>
+                  <div style="font-size: 11.5px; color: var(--muted);">
+                    {{ lesson.studyTrack && lesson.studyTrack.isPublic ? 'Pública' : 'Privada' }}
+                  </div>
+                </td>
+                <td style="padding: 12px 16px; font-size: 13px; color: var(--muted);">
+                  {{ lesson.studyTrack && lesson.studyTrack.user ? (lesson.studyTrack.user.fullName || lesson.studyTrack.user.email) : 'Desconhecido' }}
+                </td>
+                <td style="padding: 12px 16px; text-align: right;">
+                  <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                    <a
+                      href="{{ route('tracks.show', { id: lesson.studyTrackId }, { qs: { lesson: lesson.id } }) }}"
+                      class="btn btn--secondary btn--sm"
+                      title="Assistir vídeo"
+                    >
+                      @svg('lucide:play', { width: 13, height: 13 })
+                    </a>
+                    @form({ route: 'admin.videos.destroy', routeParams: { id: lesson.id }, method: 'DELETE', style: 'display: inline;' })
+                      <button
+                        type="submit"
+                        class="btn btn--danger btn--sm"
+                        onclick="return confirm('Deseja realmente remover este vídeo permanentemente?');"
+                        title="Excluir vídeo"
+                      >
+                        @svg('lucide:trash-2', { width: 13, height: 13 })
+                      </button>
+                    @end
+                  </div>
+                </td>
+              </tr>
+            @end
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+@end

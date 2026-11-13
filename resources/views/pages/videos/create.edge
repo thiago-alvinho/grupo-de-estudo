@@ -1,0 +1,89 @@
+@layouts.app({ title: 'Enviar Novo Vídeo' })
+  <div style="max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+    @link({ route: 'videos.index', class: 'back-link' })
+      @svg('lucide:arrow-left', { width: 15, height: 15 })
+      <span>Voltar para Busca de Vídeos</span>
+    @end
+
+    <div class="panel">
+      <div class="panel__head" style="margin-bottom: 20px;">
+        <h1 class="display-font" style="font-size: 22px; font-weight: 700;">Enviar Novo Vídeo</h1>
+        <p style="font-size: 14px; color: var(--muted); margin-top: 4px;">
+          Adicione uma videoaula do YouTube a uma das suas trilhas de estudo.
+        </p>
+      </div>
+
+      @if(tracks.length === 0)
+        <div class="alert alert--warning" style="margin-bottom: 20px;">
+          @svg('lucide:alert-triangle', { width: 18, height: 18 })
+          <div>
+            <strong>Você precisa de uma trilha!</strong>
+            <p style="font-size: 13.5px; margin-top: 4px;">
+              Para enviar um vídeo, você deve criar primeiro uma trilha de estudo para organizá-lo.
+            </p>
+            <div style="margin-top: 10px;">
+              @link({ route: 'tracks.create', class: 'btn btn--primary btn--sm' })
+                @svg('lucide:plus', { width: 14, height: 14 })
+                <span>Criar Minha Primeira Trilha</span>
+              @end
+            </div>
+          </div>
+        </div>
+      @else
+        @form({ route: 'videos.store', method: 'POST', class: 'form-stack' })
+          {{-- Select Track --}}
+          <div class="field">
+            <label class="field__label" for="studyTrackId">Trilha de Estudo *</label>
+            <select id="studyTrackId" name="studyTrackId" class="field__input" required>
+              @each(track in tracks)
+                <option value="{{ track.id }}">{{ track.title }} ({{ track.isPublic ? 'Pública' : 'Privada' }})</option>
+              @end
+            </select>
+            <span class="field__help">Selecione em qual disciplina ou trilha este vídeo será inserido.</span>
+          </div>
+
+          {{-- Lesson Title --}}
+          <div class="field">
+            <label class="field__label" for="title">Título da Videoaula *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              class="field__input"
+              placeholder="Ex: Aula 01 - Introdução a Limites e Continuidade"
+              required
+              minlength="2"
+              maxlength="150"
+            />
+          </div>
+
+          {{-- YouTube URL --}}
+          <div class="field">
+            <label class="field__label" for="youtubeUrl">Link do YouTube *</label>
+            <input
+              type="url"
+              id="youtubeUrl"
+              name="youtubeUrl"
+              class="field__input"
+              placeholder="https://www.youtube.com/watch?v=..."
+              required
+            />
+            <span class="field__help">
+              Formatos aceitos: links padrão (watch?v=), links curtos (youtu.be/), embed ou Shorts.
+            </span>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            @link({ route: 'videos.index', class: 'btn btn--secondary' })
+              <span>Cancelar</span>
+            @end
+            <button type="submit" class="btn btn--primary">
+              @svg('lucide:upload-cloud', { width: 16, height: 16 })
+              <span>Salvar e Enviar Vídeo</span>
+            </button>
+          </div>
+        @end
+      @end
+    </div>
+  </div>
+@end

@@ -1,4 +1,5 @@
 import User from '#models/user'
+import Notification from '#models/notification'
 import { signupValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -21,6 +22,15 @@ export default class NewAccountController {
   async store({ request, response, auth }: HttpContext) {
     const { fullName, email, password } = await request.validateUsing(signupValidator)
     const user = await User.create({ fullName, email, password })
+
+    await Notification.create({
+      userId: user.id,
+      title: 'Bem-vindo ao Grupo de Estudo!',
+      message:
+        'Sua conta foi criada com sucesso. Explore as trilhas públicas ou crie sua primeira trilha de estudos.',
+      link: '/tracks',
+      isRead: false,
+    })
 
     await auth.use('web').login(user)
     response.redirect().toRoute('dashboard')

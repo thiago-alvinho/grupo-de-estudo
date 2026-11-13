@@ -7,6 +7,23 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class LessonNoteSchema extends BaseModel {
+  static $columns = ['content', 'createdAt', 'id', 'lessonId', 'updatedAt', 'userId'] as const
+  $columns = LessonNoteSchema.$columns
+  @column()
+  declare content: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare lessonId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class LessonProgressSchema extends BaseModel {
   static $columns = ['completedAt', 'createdAt', 'id', 'lessonId', 'updatedAt', 'userId'] as const
   $columns = LessonProgressSchema.$columns
@@ -25,16 +42,7 @@ export class LessonProgressSchema extends BaseModel {
 }
 
 export class LessonSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'id',
-    'position',
-    'studyTrackId',
-    'title',
-    'updatedAt',
-    'youtubeUrl',
-    'youtubeVideoId',
-  ] as const
+  static $columns = ['createdAt', 'id', 'position', 'studyTrackId', 'title', 'updatedAt', 'youtubeUrl', 'youtubeVideoId'] as const
   $columns = LessonSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -54,17 +62,49 @@ export class LessonSchema extends BaseModel {
   declare youtubeVideoId: string
 }
 
+export class NotificationSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'isRead', 'link', 'message', 'title', 'updatedAt', 'userId'] as const
+  $columns = NotificationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isRead: boolean
+  @column()
+  declare link: string | null
+  @column()
+  declare message: string
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
+export class StudyTrackMemberSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'status', 'studyTrackId', 'updatedAt', 'userId'] as const
+  $columns = StudyTrackMemberSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare status: string
+  @column()
+  declare studyTrackId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class StudyTrackSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'description',
-    'id',
-    'isPublic',
-    'title',
-    'updatedAt',
-    'userId',
-  ] as const
+  static $columns = ['accessPassword', 'createdAt', 'description', 'id', 'isPublic', 'title', 'updatedAt', 'userId'] as const
   $columns = StudyTrackSchema.$columns
+  @column()
+  declare accessPassword: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
@@ -82,15 +122,7 @@ export class StudyTrackSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'email',
-    'fullName',
-    'id',
-    'password',
-    'role',
-    'updatedAt',
-  ] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'role', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

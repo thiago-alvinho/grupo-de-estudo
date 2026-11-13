@@ -1,6 +1,8 @@
 import StudyTrack from '#models/study_track'
+import StudyTrackMember from '#models/study_track_member'
 import Lesson from '#models/lesson'
 import LessonProgress from '#models/lesson_progress'
+import LessonNote from '#models/lesson_note'
 import { extractYoutubeVideoId, lessonValidator } from '#validators/study_track'
 import { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -108,17 +110,28 @@ export default class LessonsController {
     return response.redirect().withQs(false).toRoute('tracks.show', { id: track.id })
   }
 
+  private async findAccessibleTrack(trackId: number, userId: number, isAdmin: boolean) {
+    const track = await StudyTrack.findOrFail(trackId)
+    if (track.isPublic || track.userId === userId || isAdmin) {
+      return track
+    }
+    const member = await StudyTrackMember.query()
+      .where('studyTrackId', track.id)
+      .where('userId', userId)
+      .where('status', 'approved')
+      .first()
+    if (!member) {
+      throw new Error('Acesso não autorizado a esta trilha privada.')
+    }
+    return track
+  }
+
   /**
    * Toggle completion status of a lesson for the authenticated user.
    */
   async toggleProgress({ params, request, response, auth, session }: HttpContext) {
     const user = auth.user!
-    const track = await StudyTrack.query()
-      .where('id', params.trackId)
-      .where((query) => {
-        query.where('userId', user.id).orWhere('isPublic', true)
-      })
-      .firstOrFail()
+    const track = await this.findAccessibleTrack(Number(params.trackId), user.id, user.isAdmin)
 
     const lesson = await Lesson.query()
       .where('id', params.id)
@@ -147,5 +160,34 @@ export default class LessonsController {
       .redirect()
       .withQs({ lesson: activeLessonId })
       .toRoute('tracks.show', { id: track.id })
+  }
+
+  /**
+   * Save or update personal notes for a lesson in the database.
+   */
+  async saveNote({ params, request, response, auth, session }: HttpContext) {
+    const user = auth.user!
+    const track = await this.findAccessibleTrack(Number(params.trackId), user.id, user.isAdmin)
+
+    const lesson = await Lesson.query()
+      .where('id', params.id)
+      .where('studyTrackId', track.id)
+      .firstOrFail()
+
+    const content = String(request.input('content', '')).slice(0, 10000)
+
+    await LessonNote.updateOrCreate(
+      { userId: user.id, lessonId: lesson.id },
+      { content }
+    )
+
+    const savedAt = DateTime.now().setZone('America/Sao_Paulo').toFormat('HH:mm')
+
+    if (request.accepts(['html', 'json']) === 'json' || request.ajax()) {
+      return response.json({ success: true, savedAt })
+    }
+
+    session.flash('success', 'Anotação salva com sucesso!')
+    return response.redirect().withQs({ lesson: lesson.id }).toRoute('tracks.show', { id: track.id })
   }
 }

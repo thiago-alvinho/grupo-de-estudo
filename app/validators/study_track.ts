@@ -72,6 +72,8 @@ export const studyTrackValidator = vine.create({
   title: vine.string().trim().minLength(3).maxLength(150),
   description: vine.string().trim().maxLength(1000).nullable().optional(),
   isPublic: vine.boolean().optional(),
+  accessPassword: vine.string().trim().minLength(3).maxLength(100).nullable().optional(),
+  removePassword: vine.boolean().optional(),
 })
 
 /**
